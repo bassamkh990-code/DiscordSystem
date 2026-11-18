@@ -29,6 +29,7 @@ function writeDB(data) {
     fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
 }
 
+// دالة لتسجيل العمليات تلقائياً
 function logAction(action, details) {
     const db = readDB();
     if (!db.auditLogs) db.auditLogs = [];
@@ -42,19 +43,32 @@ function logAction(action, details) {
     writeDB(db);
 }
 
-const DASHBOARD_PASSCODE = '966123';
-const AUDIT_PASSCODE = '999888';
+const DASHBOARD_PASSCODE = '966123'; // رمز دخول اللوحة الرئيسية
+const AUDIT_PASSCODE = '999888';     // رمز دخول سجل العمليات السري
 
-const NEW_BOT_TOKEN = process.env.NEW_BOT_TOKEN;
-const PACKAGE_BOT_TOKEN = process.env.PACKAGE_BOT_TOKEN;
-const ACTIVATION_BOT_TOKEN = process.env.ACTIVATION_BOT_TOKEN;
+// ==========================================
+// 🔑 توكنات البوتات (تسحب بأمان من Render)
+// ==========================================
+const NEW_BOT_TOKEN = process.env.NEW_BOT_TOKEN;                   // توكن بوت الإدارة والساعات
+const PACKAGE_BOT_TOKEN = process.env.PACKAGE_BOT_TOKEN;           // توكن بوت الحزم
+const ACTIVATION_BOT_TOKEN = process.env.ACTIVATION_BOT_TOKEN;     // توكن بوت التفعيل
 
-const ATTENDANCE_LOG_CHANNEL = '1571824969103708210';
-const SUPPORT_CHANNELS = ['1571825013680504953', '1571825040335446147', '1571825068168978452'];
+// ==========================================
+// 📌 آيديات الرومات (Channels)
+// ==========================================
+const ATTENDANCE_LOG_CHANNEL = '1571824969103708210'; // روم سجلات دخول وخروج الإداريين
+const SUPPORT_CHANNELS = [
+    '1571825013680504953', // روم الدعم الصوتي الأول
+    '1571825040335446147', // روم الدعم الصوتي الثاني
+    '1571825068168978452'  // روم الدعم الصوتي الثالث
+]; 
 
-const STAFF_ROLE_ID = '1572372027162103888';
-const THANKS_ROLE_ID = '1572372060012019792';
-const BANNED_STAFF_ROLE_ID = '1572372121827541012';
+// ==========================================
+// 🛡️ آيديات الرتب (Roles) الرئيسية
+// ==========================================
+const STAFF_ROLE_ID = '1572372027162103888';        // رتبة الإداري الأساسية
+const THANKS_ROLE_ID = '1572372060012019792';        // رتبة شكر لخدمتك الإدارية (عند الحذف بقرار شكر)
+const BANNED_STAFF_ROLE_ID = '1572372121827541012';  // رتبة محظور من دخول الإدارة (عند الحذف بقرار حظر)
 
 const activeSessions = new Map();
 
@@ -201,13 +215,17 @@ actClient.on('interactionCreate', async interaction => {
         await interaction.deferReply({ ephemeral: true });
         try {
             const member = await interaction.guild.members.fetch(did);
+            
+            // ==========================================
+            // 🛡️ رتب التفعيل والقطاعات العسكرية
+            // ==========================================
             const ROLES = { 
-                "sec_1": "1569400665539608648", 
-                "pol_1": "1569400598540067006", 
-                "traf_1": "1569400809245118494", 
-                "sf_1": "1569400719654654002", 
-                "agreed": "1569402699047243999",
-                "not_agreed": "1569402893961011322"
+                "sec_1": "1569400665539608648",      // رتبة قطاع: الإدارة العامة لأمن الطرق
+                "pol_1": "1569400598540067006",      // رتبة قطاع: الشرطة
+                "traf_1": "1569400809245118494",     // رتبة قطاع: الإدارة العامة للمرور
+                "sf_1": "1569400719654654002",       // رتبة قطاع: الإدارة العامة لدوريات الأمن
+                "agreed": "1569402699047243999",     // رتبة الموافقة (تُعطى عند إتمام التفعيل)
+                "not_agreed": "1569402893961011322"  // رتبة عدم الموافقة (تُزال تلقائياً عند التفعيل إن وجدت)
             };
             const SECTOR_NAMES = { "sec_1": "أمن الطرق", "pol_1": "الشرطة", "traf_1": "المرور", "sf_1": "دوريات الأمن" };
 
