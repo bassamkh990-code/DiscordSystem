@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>لوحة التحكم والإحصائيات</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-950 text-white font-sans p-6">
+
+<% if (!authenticated) { %>
+    <div class="min-h-[85vh] flex items-center justify-center">
+        <div class="bg-gray-900 border border-gray-800 p-8 rounded-2xl max-w-sm w-full shadow-2xl text-center">
+            <div class="w-16 h-16 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 border border-blue-500/30">
+                🔐
+            </div>
+            <h1 class="text-2xl font-bold text-white mb-1">تسجيل الدخول</h1>
+            <p class="text-sm text-gray-400 mb-6">أدخل رمز الدخول للوصول إلى لوحة التحكم</p>
+
+            <form onsubmit="submitLogin(event)" class="space-y-4">
+                <input type="password" id="passcodeInput" placeholder="أدخل الرمز هنا..." autofocus
+                       class="w-full bg-gray-800 border border-gray-700 focus:border-blue-500 p-3 rounded-xl text-center text-lg tracking-widest text-white outline-none">
+                <p id="loginError" class="text-red-400 text-sm hidden"></p>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition">
+                    دخول
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        async function submitLogin(e) {
+            e.preventDefault();
+            const passcode = document.getElementById('passcodeInput').value.trim();
+            const errEl = document.getElementById('loginError');
+            errEl.classList.add('hidden');
+
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ passcode })
+            });
+            const data = await res.json();
+
+            if (data.success) location.reload();
+            else {
+                errEl.innerText = data.message || 'الرمز غير صحيح';
+                errEl.classList.remove('hidden');
+                document.getElementById('passcodeInput').value = '';
+            }
+        }
+    </script>
+
+<% } else { %>
+    <div class="max-w-7xl mx-auto">
+        <div class="flex items-center justify-between mb-6 border-b border-gray-800 pb-4">
+            <h1 class="text-3xl font-bold text-blue-400">🛡️ لوحة التحكم والإحصائيات</h1>
+            <button onclick="logout()" class="bg-gray-800 hover:bg-red-600/20 hover:text-red-400 text-gray-300 px-4 py-2 rounded-lg text-sm font-semibold border border-gray-700 transition">
+                🔒 قفل اللوحة
+            </button>
+        </div>
+
+        <div class="flex flex-wrap gap-4 mb-8">
+            <button onclick="showTab('staff')" id="btn-staff" class="bg-blue-600 px-5 py-2 rounded-lg font-bold">👥 الموظفين والساعات (<%= staffList.length %>)</button>
+            <button onclick="showTab('packages')" id="btn-packages" class="bg-gray-800 px-5 py-2 rounded-lg font-bold">📦 الحزم (<%= packages.length %>)</button>
+            <button onclick="showTab('activations')" id="btn-activations" class="bg-gray-800 px-5 py-2 rounded-lg font-bold">✅ التفعيل (<%= activations.length %>)</button>
+            <button onclick="showTab('audit')" id="btn-audit" class="bg-gray-800 px-5 py-2 rounded-lg font-bold">📜 سجل العمليات (محمي)</button>
+        </div>
+
+        <!-- الموظفين -->
+        <div id="tab-staff" class="tab-content">
+            <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 mb-6 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-2">
+                    <input type="text" id="staffIdInput" placeholder="ضع Copy ID للإداري هنا..." class="bg-gray-800 border border-gray-700 p-2.5 rounded-lg w-60 text-white outline-none focus:border-green-500">
+                    <button onclick="addStaff()" class="bg-green-600 hover:bg-green-700 px-4 py-2.5 rounded-lg font-bold transition">+ إضافة إداري</button>
+                    <button onclick="resetAllStaffHours()" class="bg-amber-600/20 hover:bg-amber-600/40 text-amber-400 border border-amber-500/30 px-4 py-2.5 rounded-lg font-bold transition">
+                        🔄 تصفير ساعات الجميع
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3">
+                    <input type="text" id="staffSearchInput" oninput="filterStaff()" placeholder="🔍 بحث باليوزر أو اسم FiveM أو الآيدي..." class="bg-gray-800 border border-gray-700 focus:border-blue-500 p-2.5 rounded-lg w-72 text-white outline-none">
+                    <select id="staffSortSelect" onchange="filterStaff()" class="bg-gray-800 border border-gray-700 focus:border-blue-500 p-2.5 rounded-lg text-white outline-none">
+                        <option value="default">الترتيب الافتراضي</option>
+                        <option value="most">الأكثر ساعات ⬆️</option>
+                        <option value="least">الأقل ساعات ⬇️</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="staffGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <% staffList.forEach(s => { %>
+                    <div onclick="openDetailsModal(this)" 
+                         data-id="<%= s.discordId %>" 
+                         data-username="<%= s.username %>" 
+                         data-avatar="<%= s.avatar %>"
+                         data-fivem="<%= s.fivemName || '' %>"
+                         data-notes="<%= s.extraNotes || '' %>"
+                         data-minutes="<%= s.totalMinutes || 0 %>"
+                         class="staff-card bg-gray-900 p-5 rounded-xl border border-gray-800 hover:border-blue-500/60 cursor-pointer transition">
+                        
+                        <% if (s.inSupport) { %>
+                            <div class="mb-3 flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-lg">
+                                <span class="relative flex h-3 w-3">
+                                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                  <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                                </span>
+                                <span class="text-xs text-emerald-400 font-bold truncate">متواجد في: <%= s.channelName %></span>
+                            </div>
+                        <% } %>
+
+                        <div class="flex items-start justify-between gap-2 mb-4">
+                            <div class="flex items-center gap-3">
+                                <img src="<%= s.avatar %>" class="w-12 h-12 rounded-full border border-blue-500 shrink-0">
+                                <div>
+                                    <h3 class="font-bold text-lg flex flex-wrap items-center gap-2">
+                                        <span><%= s.username %></span>
+                                        <% if (s.fivemName) { %>
+                                            <span class="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full"><%= s.fivemName %></span>
+                                        <% } %>
+                                    </h3>
+                                    <p class="text-sm text-blue-400 font-semibold">الإجمالي: <%= Math.floor((s.totalMinutes || 0) / 60) %> ساعة و <%= (s.totalMinutes || 0) % 60 %> دقيقة</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-1.5 shrink-0">
+                                <button onclick="event.stopPropagation(); resetStaffHours('<%= s.discordId %>', '<%= s.username %>')" title="تصفير ساعات" class="bg-amber-600/20 hover:bg-amber-600/40 text-amber-400 px-2.5 py-1 rounded text-xs font-semibold transition">
+                                    🔄 تصفير
+                                </button>
+                                <button onclick="event.stopPropagation(); openRemoveModal('<%= s.discordId %>', '<%= s.username %>')" class="bg-red-600/20 hover:bg-red-600/40 text-red-400 px-2.5 py-1 rounded text-xs font-semibold transition">
+                                    حذف
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 mb-3 bg-gray-950/60 p-2.5 rounded-xl border border-gray-800 text-center">
+                            <div>
+                                <p class="text-xs text-gray-400">التفعيلات</p>
+                                <p class="text-sm font-bold text-emerald-400"><%= s.activationsCount %> 👤</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-400">الحزم</p>
+                                <p class="text-sm font-bold text-purple-400"><%= s.packagesCount %> 📦</p>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-gray-800 pt-3 max-h-28 overflow-y-auto space-y-1">
+                            <% (s.sessions || []).forEach(sess => { %>
+                                <div class="flex justify-between text-sm bg-gray-800/50 px-3 py-1.5 rounded">
+                                    <span><%= sess.date %></span>
+                                    <span class="text-green-400 font-bold"><%= (sess.minutes / 60).toFixed(1) %> ساعة</span>
+                                </div>
+                            <% }) %>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+            <p id="noStaffMsg" class="hidden text-center text-gray-500 py-8">لا يوجد إداري مطابق لبحثك.</p>
+        </div>
+
+        <!-- الحزم -->
+        <div id="tab-packages" class="tab-content hidden">
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                <h2 class="text-xl font-bold">📜 سجل الحزم</h2>
+                <div class="flex flex-wrap items-center gap-3">
+                    <input type="text" id="pkgSearchInput" oninput="filterPackages()" placeholder="🔍 بحث بيوزر الشخص أو الإداري..." class="bg-gray-900 border border-gray-700 focus:border-purple-500 p-2.5 rounded-lg w-72 text-white outline-none">
+                    <select id="pkgFilterSelect" onchange="filterPackages()" class="bg-gray-900 border border-gray-700 focus:border-purple-500 p-2.5 rounded-lg text-white outline-none">
+                        <option value="all">جميع الحزم</option>
+                        <option value="حزمة بلاتينيوم">💎 حزمة بلاتينيوم</option>
+                        <option value="حزمة تيتانيوم">⚡ حزمة تيتانيوم</option>
+                        <option value="حزمة زحف">🚀 حزمة زحف</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+                <table class="w-full text-right">
+                    <thead class="bg-gray-800 text-gray-300">
+                        <tr><th class="p-3">الشخص</th><th class="p-3">الحزمة</th><th class="p-3">الإداري</th><th class="p-3">السبب</th><th class="p-3">الوقت</th></tr>
+                    </thead>
+                    <tbody id="packagesTableBody" class="divide-y divide-gray-800">
+                        <% if(packages.length === 0) { %>
+                            <tr><td colspan="5" class="p-4 text-center text-gray-500">لا توجد حزم مسجلة حتى الآن</td></tr>
+                        <% } else { %>
+                            <% packages.forEach(p => { %>
+                                <tr class="pkg-row" data-user="<%= p.username %>" data-staff="<%= p.staffName %>" data-pkg="<%= p.packageName %>">
+                                    <td class="p-3 font-semibold"><%= p.username %></td>
+                                    <td class="p-3 text-purple-400"><%= p.packageName %></td>
+                                    <td class="p-3"><%= p.staffName %></td>
+                                    <td class="p-3"><%= p.reason %></td>
+                                    <td class="p-3 text-sm text-gray-400"><%= p.date %></td>
+                                </tr>
+                            <% }) %>
+                        <% } %>
+                    </tbody>
+                </table>
+                <p id="noPkgMsg" class="hidden p-4 text-center text-gray-500">لا توجد نتائج مطابقة للبحث.</p>
+            </div>
+        </div>
+
+        <!-- التفعيل -->
+        <div id="tab-activations" class="tab-content hidden">
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                <h2 class="text-xl font-bold">📜 سجل التفعيل</h2>
+                <div class="flex flex-wrap items-center gap-3">
+                    <input type="text" id="actSearchInput" oninput="filterActivations()" placeholder="🔍 بحث باليوزر أو الاسم العسكري أو الإداري..." class="bg-gray-900 border border-gray-700 focus:border-emerald-500 p-2.5 rounded-lg w-72 text-white outline-none">
+                    <select id="actSectorSelect" onchange="filterActivations()" class="bg-gray-900 border border-gray-700 focus:border-emerald-500 p-2.5 rounded-lg text-white outline-none">
+                        <option value="all">جميع القطاعات</option>
+                        <option value="أمن الطرق">أمن الطرق</option>
+                        <option value="الشرطة">الشرطة</option>
+                        <option value="المرور">المرور</option>
+                        <option value="دوريات الأمن">دوريات الأمن</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+                <table class="w-full text-right">
+                    <thead class="bg-gray-800 text-gray-300">
+                        <tr><th class="p-3">العضو</th><th class="p-3">الاسم العسكري</th><th class="p-3">القطاع</th><th class="p-3">الإداري</th><th class="p-3">الوقت</th></tr>
+                    </thead>
+                    <tbody id="activationsTableBody" class="divide-y divide-gray-800">
+                        <% if(activations.length === 0) { %>
+                            <tr><td colspan="5" class="p-4 text-center text-gray-500">لا توجد عمليات تفعيل مسجلة حتى الآن</td></tr>
+                        <% } else { %>
+                            <% activations.forEach(a => { %>
+                                <tr class="act-row" data-user="<%= a.username %>" data-nick="<%= a.nickname %>" data-staff="<%= a.staffName %>" data-sector="<%= a.sector %>">
+                                    <td class="p-3 font-semibold"><%= a.username %></td>
+                                    <td class="p-3 text-emerald-400"><%= a.nickname %></td>
+                                    <td class="p-3"><%= a.sector %></td>
+                                    <td class="p-3"><%= a.staffName %></td>
+                                    <td class="p-3 text-sm text-gray-400"><%= a.date %></td>
+                                </tr>
+                            <% }) %>
+                        <% } %>
+                    </tbody>
+                </table>
+                <p id="noActMsg" class="hidden p-4 text-center text-gray-500">لا توجد نتائج مطابقة للبحث.</p>
+            </div>
+        </div>
+
+        <!-- سجل العمليات (محمي برمز خاص) -->
+        <div id="tab-audit" class="tab-content hidden">
+            <% if (!auditAuth) { %>
+                <!-- شاشة طلب رمز سجل العمليات -->
+                <div class="bg-gray-900 border border-gray-800 p-8 rounded-2xl max-w-md w-full mx-auto my-12 text-center shadow-2xl">
+                    <div class="w-14 h-14 bg-amber-600/20 text-amber-400 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-4 border border-amber-500/30">
+                        🔒
+                    </div>
+                    <h2 class="text-xl font-bold text-white mb-1">سجل العمليات محمي</h2>
+                    <p class="text-sm text-gray-400 mb-6">أدخل رمز الدخول الخاص بسجل العمليات لعرض السجلات</p>
+
+                    <form onsubmit="submitAuditLogin(event)" class="space-y-4">
+                        <input type="password" id="auditPassInput" placeholder="أدخل رمز سجل العمليات..." autofocus
+                               class="w-full bg-gray-800 border border-gray-700 focus:border-amber-500 p-3 rounded-xl text-center text-lg tracking-widest text-white outline-none">
+                        <p id="auditLoginError" class="text-red-400 text-sm hidden"></p>
+                        <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 rounded-xl transition">
+                            فتح السجل
+                        </button>
+                    </form>
+                </div>
+            <% } else { %>
+                <!-- جدول السجلات بعد إدخال الرمز الصحيح -->
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold">📜 سجل الحركات والعمليات الإدارية</h2>
+                    <span class="text-xs text-gray-400 bg-gray-900 px-3 py-1.5 rounded-lg border border-gray-800">مفتوح بأمان 🔓</span>
+                </div>
+
+                <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+                    <table class="w-full text-right">
+                        <thead class="bg-gray-800 text-gray-300">
+                            <tr><th class="p-3">نوع الحركة</th><th class="p-3">التفاصيل</th><th class="p-3">الوقت</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-800">
+                            <% if(auditLogs.length === 0) { %>
+                                <tr><td colspan="3" class="p-4 text-center text-gray-500">لا توجد عمليات مسجلة حتى الآن</td></tr>
+                            <% } else { %>
+                                <% auditLogs.forEach(log => { %>
+                                    <tr>
+                                        <td class="p-3 font-semibold text-amber-400"><%= log.action %></td>
+                                        <td class="p-3 text-gray-300"><%= log.details %></td>
+                                        <td class="p-3 text-sm text-gray-400"><%= log.date %></td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- نافذة تفاصيل الإداري -->
+    <div id="detailsModal" class="fixed inset-0 bg-black/75 hidden items-center justify-center z-50">
+        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl max-w-md w-full mx-4 shadow-2xl">
+            <div class="flex items-center gap-4 mb-5 border-b border-gray-800 pb-4">
+                <img id="detAvatar" src="" class="w-14 h-14 rounded-full border-2 border-blue-500">
+                <div>
+                    <h3 id="detUsername" class="text-xl font-bold text-white"></h3>
+                    <p class="text-xs text-gray-400 mt-0.5">ID: <span id="detDiscordId" class="font-mono text-gray-300"></span></p>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-300 mb-1.5">🎮 الاسم في FiveM</label>
+                    <input type="text" id="detFivemInput" placeholder="اكتب اسم الإداري داخل السيرفر..." class="w-full bg-gray-800 border border-gray-700 focus:border-blue-500 p-2.5 rounded-xl text-white outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-300 mb-1.5">📝 تفاصيل إضافية <span class="text-gray-500 font-normal">(اختياري)</span></label>
+                    <textarea id="detNotesInput" rows="3" placeholder="أضف أي ملاحظات أو تفاصيل إضافية هنا..." class="w-full bg-gray-800 border border-gray-700 focus:border-blue-500 p-2.5 rounded-xl text-white outline-none resize-none"></textarea>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-6">
+                <button onclick="saveStaffDetails()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl transition">
+                    💾 حفظ التفاصيل
+                </button>
+                <button onclick="closeDetailsModal()" class="bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold py-2.5 px-5 rounded-xl transition">
+                    إغلاق
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة خيارات حذف الإداري -->
+    <div id="removeModal" class="fixed inset-0 bg-black/75 hidden items-center justify-center z-50">
+        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl max-w-md w-full mx-4 shadow-2xl">
+            <h3 class="text-xl font-bold text-white mb-2">إزالة الإداري: <span id="modalStaffName" class="text-blue-400"></span></h3>
+            <p class="text-gray-400 text-sm mb-6">سيتم سحب رتبة الإدارة تلقائياً. اختر الإجراء والرتبة التي تريد منحها للعضو:</p>
+            
+            <div class="space-y-3">
+                <button onclick="confirmRemove('thanks')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition">
+                    <span>🏅</span>
+                    <span>شكراً لخدمتك الإدارية</span>
+                </button>
+                <button onclick="confirmRemove('ban')" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition">
+                    <span>🚫</span>
+                    <span>محظور من دخول الإدارة</span>
+                </button>
+                <button onclick="closeRemoveModal()" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold py-2.5 px-4 rounded-xl mt-2 transition">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedStaffId = null;
+        let currentDetailsId = null;
+
+        async function logout() {
+            await fetch('/api/logout', { method: 'POST' });
+            location.reload();
+        }
+
+        function showTab(t) { 
+            document.querySelectorAll('.tab-content').forEach(e => e.classList.add('hidden')); 
+            document.getElementById('tab-' + t).classList.remove('hidden'); 
+            
+            document.getElementById('btn-staff').className = 'bg-gray-800 px-5 py-2 rounded-lg font-bold';
+            document.getElementById('btn-packages').className = 'bg-gray-800 px-5 py-2 rounded-lg font-bold';
+            document.getElementById('btn-activations').className = 'bg-gray-800 px-5 py-2 rounded-lg font-bold';
+            document.getElementById('btn-audit').className = 'bg-gray-800 px-5 py-2 rounded-lg font-bold';
+            
+            if(t === 'staff') document.getElementById('btn-staff').className = 'bg-blue-600 px-5 py-2 rounded-lg font-bold';
+            if(t === 'packages') document.getElementById('btn-packages').className = 'bg-purple-600 px-5 py-2 rounded-lg font-bold';
+            if(t === 'activations') document.getElementById('btn-activations').className = 'bg-emerald-600 px-5 py-2 rounded-lg font-bold';
+            if(t === 'audit') document.getElementById('btn-audit').className = 'bg-amber-600 px-5 py-2 rounded-lg font-bold';
+        }
+
+        async function submitAuditLogin(e) {
+            e.preventDefault();
+            const passcode = document.getElementById('auditPassInput').value.trim();
+            const errEl = document.getElementById('auditLoginError');
+            errEl.classList.add('hidden');
+
+            const res = await fetch('/api/audit/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ passcode })
+            });
+            const data = await res.json();
+
+            if (data.success) location.reload();
+            else {
+                errEl.innerText = data.message || 'الرمز غير صحيح';
+                errEl.classList.remove('hidden');
+                document.getElementById('auditPassInput').value = '';
+            }
+        }
+
+        async function resetStaffHours(id, username) {
+            if (!confirm(`هل أنت متأكد من تصفير ساعات الإداري (${username})؟`)) return;
+            await fetch('/api/staff/reset/' + id, { method: 'POST' });
+            location.reload();
+        }
+
+        async function resetAllStaffHours() {
+            if (!confirm('⚠️ هل أنت متأكد من تصفير ساعات جميع الإداريين؟ لا يمكن التراجع عن هذا الإجراء!')) return;
+            await fetch('/api/staff/reset-all', { method: 'POST' });
+            location.reload();
+        }
+
+        function filterStaff() {
+            const query = document.getElementById('staffSearchInput').value.toLowerCase().trim();
+            const sortVal = document.getElementById('staffSortSelect').value;
+            const grid = document.getElementById('staffGrid');
+            const cards = Array.from(grid.getElementsByClassName('staff-card'));
+            let visibleCount = 0;
+
+            cards.forEach(card => {
+                const username = card.dataset.username.toLowerCase();
+                const fivem = card.dataset.fivem.toLowerCase();
+                const id = card.dataset.id.toLowerCase();
+
+                if (username.includes(query) || fivem.includes(query) || id.includes(query)) {
+                    card.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+
+            if (sortVal === 'most') {
+                cards.sort((a, b) => Number(b.dataset.minutes) - Number(a.dataset.minutes));
+                cards.forEach(c => grid.appendChild(c));
+            } else if (sortVal === 'least') {
+                cards.sort((a, b) => Number(a.dataset.minutes) - Number(b.dataset.minutes));
+                cards.forEach(c => grid.appendChild(c));
+            }
+
+            document.getElementById('noStaffMsg').classList.toggle('hidden', visibleCount > 0 || cards.length === 0);
+        }
+
+        function filterPackages() {
+            const query = document.getElementById('pkgSearchInput').value.toLowerCase().trim();
+            const pkgType = document.getElementById('pkgFilterSelect').value;
+            const rows = document.querySelectorAll('.pkg-row');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const user = row.dataset.user.toLowerCase();
+                const staff = row.dataset.staff.toLowerCase();
+                const pkg = row.dataset.pkg;
+
+                if ((user.includes(query) || staff.includes(query)) && (pkgType === 'all' || pkg === pkgType)) {
+                    row.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    row.classList.add('hidden');
+                }
+            });
+
+            document.getElementById('noPkgMsg').classList.toggle('hidden', visibleCount > 0 || rows.length === 0);
+        }
+
+        function filterActivations() {
+            const query = document.getElementById('actSearchInput').value.toLowerCase().trim();
+            const sector = document.getElementById('actSectorSelect').value;
+            const rows = document.querySelectorAll('.act-row');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const user = row.dataset.user.toLowerCase();
+                const nick = row.dataset.nick.toLowerCase();
+                const staff = row.dataset.staff.toLowerCase();
+                const rowSector = row.dataset.sector;
+
+                if ((user.includes(query) || nick.includes(query) || staff.includes(query)) && (sector === 'all' || rowSector === sector)) {
+                    row.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    row.classList.add('hidden');
+                }
+            });
+
+            document.getElementById('noActMsg').classList.toggle('hidden', visibleCount > 0 || rows.length === 0);
+        }
+
+        async function addStaff() {
+            let discordId = document.getElementById('staffIdInput').value.trim();
+            if (!discordId) return alert('الرجاء وضع الآيدي أولاً');
+            let res = await fetch('/api/staff/add', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ discordId }) 
+            });
+            let data = await res.json();
+            if (data.success) location.reload(); 
+            else alert(data.message || 'خطأ بالآيدي');
+        }
+
+        function openDetailsModal(card) {
+            currentDetailsId = card.dataset.id;
+            document.getElementById('detAvatar').src = card.dataset.avatar;
+            document.getElementById('detUsername').innerText = card.dataset.username;
+            document.getElementById('detDiscordId').innerText = card.dataset.id;
+            document.getElementById('detFivemInput').value = card.dataset.fivem;
+            document.getElementById('detNotesInput').value = card.dataset.notes;
+
+            const modal = document.getElementById('detailsModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeDetailsModal() {
+            currentDetailsId = null;
+            const modal = document.getElementById('detailsModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        async function saveStaffDetails() {
+            if (!currentDetailsId) return;
+            const fivemName = document.getElementById('detFivemInput').value.trim();
+            const extraNotes = document.getElementById('detNotesInput').value.trim();
+
+            await fetch('/api/staff/details/' + currentDetailsId, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fivemName, extraNotes })
+            });
+            location.reload();
+        }
+
+        function openRemoveModal(id, username) {
+            selectedStaffId = id;
+            document.getElementById('modalStaffName').innerText = username;
+            const modal = document.getElementById('removeModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeRemoveModal() {
+            selectedStaffId = null;
+            const modal = document.getElementById('removeModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        async function confirmRemove(action) {
+            if (!selectedStaffId) return;
+            await fetch('/api/staff/remove/' + selectedStaffId, { 
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action })
+            });
+            location.reload();
+        }
+    </script>
+<% } %>
+
+</body>
+</html>
