@@ -30,6 +30,10 @@ function writeDB(data) {
     fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
 }
 
+function formatClock(dateObj) {
+    return dateObj.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+}
+
 // دالة لتسجيل العمليات تلقائياً
 function logAction(action, details) {
     try {
@@ -96,28 +100,52 @@ mainClient.on('voiceStateUpdate', async (oldState, newState) => {
     const logChannel = member.guild.channels.cache.get(ATTENDANCE_LOG_CHANNEL);
 
     if (!SUPPORT_CHANNELS.includes(oldChannel) && SUPPORT_CHANNELS.includes(newChannel)) {
-        activeSessions.set(member.id, Date.now());
+        const joinTs = Date.now();
+        activeSessions.set(member.id, {
+            startTime: joinTs,
+            channelName: newState.channel ? newState.channel.name : 'روم الدعم'
+        });
         if (logChannel) {
             logChannel.send({ embeds: [new EmbedBuilder().setColor(0x00FF00).setDescription(`🟢 **دخول إداري**\nالإداري: <@${member.id}>\nالروم: **${newState.channel.name}**`)] }).catch(()=>{});
         }
     } 
     else if (SUPPORT_CHANNELS.includes(oldChannel) && !SUPPORT_CHANNELS.includes(newChannel)) {
         if (activeSessions.has(member.id)) {
-            const startTime = activeSessions.get(member.id);
-            const diffMins = Math.floor((Date.now() - startTime) / 60000);
+            const sessionInfo = activeSessions.get(member.id);
+            const startTime = typeof sessionInfo === 'object' ? sessionInfo.startTime : sessionInfo;
+            const channelName = typeof sessionInfo === 'object' ? sessionInfo.channelName : (oldState.channel ? oldState.channel.name : 'روم الدعم');
+
+            const endDate = new Date();
+            const startDate = new Date(startTime);
+            const diffMins = Math.max(0, Math.floor((endDate.getTime() - startTime) / 60000));
             const today = new Date().toISOString().split('T')[0];
-            
+
+            if (!Array.isArray(staff.sessions)) staff.sessions = [];
+            if (!Array.isArray(staff.sessionLogs)) staff.sessionLogs = [];
+
+            staff.sessionLogs.push({
+                id: Date.now().toString() + '_' + Math.floor(Math.random() * 1000),
+                date: today,
+                channelName,
+                joinTime: formatClock(startDate),
+                leaveTime: formatClock(endDate),
+                minutes: diffMins
+            });
+            if (staff.sessionLogs.length > 60) {
+                staff.sessionLogs = staff.sessionLogs.slice(-60);
+            }
+
             if (diffMins > 0) {
-                staff.totalMinutes = (staff.totalMinutes || 0) + diffMins;
-                if (!staff.sessions) staff.sessions = [];
+                staff.totalMinutes = (Number(staff.totalMinutes) || 0) + diffMins;
                 let sess = staff.sessions.find(s => s.date === today);
                 if (sess) {
-                    sess.minutes += diffMins;
+                    sess.minutes = (Number(sess.minutes) || 0) + diffMins;
                 } else {
                     staff.sessions.push({ date: today, minutes: diffMins });
                 }
-                writeDB(db);
             }
+
+            writeDB(db);
             activeSessions.delete(member.id);
 
             if (logChannel) {
@@ -310,6 +338,13 @@ app.get('/', async (req, res) => {
 
         let inSupport = false;
         let channelName = '';
+        let activeJoinClock = '';
+
+        if (activeSessions.has(s.discordId)) {
+            const sessInfo = activeSessions.get(s.discordId);
+            const st = typeof sessInfo === 'object' ? sessInfo.startTime : sessInfo;
+            activeJoinClock = formatClock(new Date(st));
+        }
 
         if (guild) {
             try {
@@ -323,7 +358,15 @@ app.get('/', async (req, res) => {
             } catch (e) {}
         }
 
-        return { ...s, activationsCount, packagesCount, inSupport, channelName };
+        return { 
+            ...s, 
+            sessionLogs: (s.sessionLogs || []).slice().reverse(),
+            activationsCount, 
+            packagesCount, 
+            inSupport, 
+            channelName,
+            activeJoinClock
+        };
     }));
 
     res.render('index', { 
@@ -437,7 +480,7 @@ app.post('/api/staff/add', async (req, res) => {
 
     const db = readDB();
     if (!db.staff.find(s => s.discordId === discordId)) {
-        db.staff.push({ discordId, username, avatar, totalMinutes: 0, sessions: [], fivemName: '', extraNotes: '' });
+        db.staff.push({ discordId, username, avatar, totalMinutes: 0, sessions: [], sessionLogs: [], fivemName: '', extraNotes: '' });
         writeDB(db);
         logAction('إضافة إداري', `تمت إضافة الإداري ${username} (${discordId})`);
     }
@@ -499,10 +542,17 @@ app.post('/api/staff/reset/:id', (req, res) => {
 
     staff.totalMinutes = 0;
     staff.sessions = [];
-    if (activeSessions.has(discordId)) activeSessions.set(discordId, Date.now());
+    staff.sessionLogs = [];
+    if (activeSessions.has(discordId)) {
+        const prev = activeSessions.get(discordId);
+        activeSessions.set(discordId, {
+            startTime: Date.now(),
+            channelName: typeof prev === 'object' ? prev.channelName : 'روم الدعم'
+        });
+    }
     writeDB(db);
 
-    logAction('تصفير ساعات فردي', `تم تصفير ساعات الإداري ${staff.username}`);
+    logAction('تصفير ساعات فردي', `تم تصفير ساعات وجلسات الإداري ${staff.username}`);
     res.json({ success: true });
 });
 
@@ -512,11 +562,18 @@ app.post('/api/staff/reset-all', (req, res) => {
     db.staff.forEach(s => {
         s.totalMinutes = 0;
         s.sessions = [];
-        if (activeSessions.has(s.discordId)) activeSessions.set(s.discordId, Date.now());
+        s.sessionLogs = [];
+        if (activeSessions.has(s.discordId)) {
+            const prev = activeSessions.get(s.discordId);
+            activeSessions.set(s.discordId, {
+                startTime: Date.now(),
+                channelName: typeof prev === 'object' ? prev.channelName : 'روم الدعم'
+            });
+        }
     });
     writeDB(db);
 
-    logAction('تصفير ساعات جماعي', 'تم تصفير ساعات جميع الإداريين دفعة واحدة');
+    logAction('تصفير ساعات جماعي', 'تم تصفير ساعات وجلسات جميع الإداريين دفعة واحدة');
     res.json({ success: true });
 });
 
