@@ -1,42 +1,7 @@
 {
-  "staff": [
-    {
-      "discordId": "1437383547219476552",
-      "username": "Al-Basmi",
-      "avatar": "https://cdn.discordapp.com/avatars/1437383547219476552/d2031bbcce30b077e56d04f5889ec182.png",
-      "totalMinutes": 5,
-      "sessions": [
-        {
-          "date": "2026-11-18",
-          "minutes": 5
-        }
-      ],
-      "fivemName": "",
-      "extraNotes": ""
-    }
-  ],
+  "staff": [],
   "packages": [],
-  "activations": [
-    {
-      "username": ".bd.5",
-      "nickname": "محمد | نون - 100",
-      "sector": "الشرطة",
-      "staffName": "ow1243",
-      "date": "١٨‏/١١‏/٢٠٢٦، ٢:٣٢:٤٩ ص"
-    }
-  ],
-  "auditLogs": [
-    {
-      "id": "1794999840466",
-      "action": "حذف إداري",
-      "details": "تم حذف الإداري Al-Basmi ومنحه رتبة: (محظور من دخول الإدارة)",
-      "date": "١٨‏/١١‏/٢٠٢٦، ٢:٠٤:٠٠ م"
-    },
-    {
-      "id": "1795000026841",
-      "action": "إضافة إداري",
-      "details": "تمت إضافة الإداري Al-Basmi (1437383547219476552)",
-      "date": "١٨‏/١١‏/٢٠٢٦، ٢:٠٧:٠٦ م"
-    }
-  ]
+  "activations": [],
+  "auditLogs": [],
+  "blacklist": []
 }
