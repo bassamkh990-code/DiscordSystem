@@ -713,11 +713,15 @@
             const adjustMinutes = document.getElementById('detAdjustMinsInput').value.trim();
             const adjustReason = document.getElementById('detAdjustReasonInput').value.trim();
 
-            await fetch('/api/staff/details/' + currentDetailsId, {
+            const res = await fetch('/api/staff/details/' + currentDetailsId, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ fivemName, extraNotes, adjustMinutes, adjustReason })
             });
+            const data = await res.json();
+            if (!data.success) {
+                return alert(data.message || 'تعذر حفظ التعديلات');
+            }
             location.reload();
         }
 
