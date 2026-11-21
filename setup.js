@@ -441,7 +441,7 @@ app.post('/api/staff/add', async (req, res) => {
 app.post('/api/staff/details/:id', (req, res) => {
     if (!isAuthenticated(req)) return res.status(401).json({ success: false });
     const discordId = req.params.id;
-    const { fivemName, extraNotes } = req.body;
+    const { fivemName, extraNotes, adjustMinutes, adjustReason } = req.body;
 
     const db = readDB();
     const staff = db.staff.find(s => s.discordId === discordId);
@@ -449,6 +449,23 @@ app.post('/api/staff/details/:id', (req, res) => {
 
     staff.fivemName = fivemName || '';
     staff.extraNotes = extraNotes || '';
+
+    const deltaMins = parseInt(adjustMinutes, 10);
+    if (!isNaN(deltaMins) && deltaMins !== 0) {
+        staff.totalMinutes = Math.max(0, (staff.totalMinutes || 0) + deltaMins);
+        const today = new Date().toISOString().split('T')[0];
+        if (!staff.sessions) staff.sessions = [];
+        let sess = staff.sessions.find(s => s.date === today);
+        if (sess) {
+            sess.minutes = Math.max(0, (sess.minutes || 0) + deltaMins);
+        } else {
+            staff.sessions.push({ date: today, minutes: Math.max(0, deltaMins) });
+        }
+
+        const signText = deltaMins > 0 ? `+${deltaMins}` : `${deltaMins}`;
+        logAction('تعديل ساعات يدوي', `تم تعديل دقائق الإداري ${staff.username} بمقدار (${signText} دقيقة)${adjustReason ? ` | السبب: ${adjustReason}` : ''}`);
+    }
+
     writeDB(db);
 
     logAction('تحديث تفاصيل', `تم تحديث تفاصيل الإداري ${staff.username} (اسم FiveM: ${fivemName || 'بدون'})`);
