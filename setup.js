@@ -32,16 +32,22 @@ function writeDB(data) {
 
 // دالة لتسجيل العمليات تلقائياً
 function logAction(action, details) {
-    const db = readDB();
-    if (!db.auditLogs) db.auditLogs = [];
-    db.auditLogs.push({
-        id: Date.now().toString(),
-        action,
-        details,
-        date: new Date().toLocaleString('ar-SA')
-    });
-    if (db.auditLogs.length > 100) db.auditLogs.shift();
-    writeDB(db);
+    try {
+        const db = readDB();
+        if (!Array.isArray(db.auditLogs)) db.auditLogs = [];
+        db.auditLogs.push({
+            id: Date.now().toString() + '_' + Math.floor(Math.random() * 1000),
+            action,
+            details,
+            date: new Date().toLocaleString('ar-SA')
+        });
+        if (db.auditLogs.length > 100) {
+            db.auditLogs = db.auditLogs.slice(-100);
+        }
+        writeDB(db);
+    } catch (e) {
+        console.error('خطأ في تسجيل العملية:', e.message);
+    }
 }
 
 const DASHBOARD_PASSCODE = '966123'; // رمز دخول اللوحة الرئيسية
@@ -439,37 +445,49 @@ app.post('/api/staff/add', async (req, res) => {
 });
 
 app.post('/api/staff/details/:id', (req, res) => {
-    if (!isAuthenticated(req)) return res.status(401).json({ success: false });
-    const discordId = req.params.id;
-    const { fivemName, extraNotes, adjustMinutes, adjustReason } = req.body;
+    if (!isAuthenticated(req)) return res.status(401).json({ success: false, message: 'غير مصرح' });
+    const discordId = String(req.params.id || '').trim();
+    const { fivemName, extraNotes, adjustMinutes, adjustReason } = req.body || {};
 
     const db = readDB();
-    const staff = db.staff.find(s => s.discordId === discordId);
-    if (!staff) return res.status(404).json({ success: false });
+    const staff = db.staff.find(s => String(s.discordId) === discordId);
+    if (!staff) return res.status(404).json({ success: false, message: 'الإداري غير موجود' });
 
-    staff.fivemName = fivemName || '';
-    staff.extraNotes = extraNotes || '';
+    staff.fivemName = typeof fivemName === 'string' ? fivemName.trim() : (staff.fivemName || '');
+    staff.extraNotes = typeof extraNotes === 'string' ? extraNotes.trim() : (staff.extraNotes || '');
 
-    const deltaMins = parseInt(adjustMinutes, 10);
+    const rawMins = adjustMinutes === undefined || adjustMinutes === null ? '' : String(adjustMinutes).trim();
+    const deltaMins = rawMins !== '' ? parseInt(rawMins, 10) : 0;
+
+    let timeAdjusted = false;
+    let signText = '';
+
     if (!isNaN(deltaMins) && deltaMins !== 0) {
-        staff.totalMinutes = Math.max(0, (staff.totalMinutes || 0) + deltaMins);
+        const currentTotal = Number(staff.totalMinutes) || 0;
+        staff.totalMinutes = Math.max(0, currentTotal + deltaMins);
+
         const today = new Date().toISOString().split('T')[0];
-        if (!staff.sessions) staff.sessions = [];
+        if (!Array.isArray(staff.sessions)) staff.sessions = [];
         let sess = staff.sessions.find(s => s.date === today);
         if (sess) {
-            sess.minutes = Math.max(0, (sess.minutes || 0) + deltaMins);
-        } else {
-            staff.sessions.push({ date: today, minutes: Math.max(0, deltaMins) });
+            sess.minutes = Math.max(0, (Number(sess.minutes) || 0) + deltaMins);
+        } else if (deltaMins > 0) {
+            staff.sessions.push({ date: today, minutes: deltaMins });
         }
 
-        const signText = deltaMins > 0 ? `+${deltaMins}` : `${deltaMins}`;
-        logAction('تعديل ساعات يدوي', `تم تعديل دقائق الإداري ${staff.username} بمقدار (${signText} دقيقة)${adjustReason ? ` | السبب: ${adjustReason}` : ''}`);
+        timeAdjusted = true;
+        signText = deltaMins > 0 ? `+${deltaMins}` : `${deltaMins}`;
     }
 
     writeDB(db);
 
-    logAction('تحديث تفاصيل', `تم تحديث تفاصيل الإداري ${staff.username} (اسم FiveM: ${fivemName || 'بدون'})`);
-    res.json({ success: true });
+    if (timeAdjusted) {
+        const reasonText = adjustReason && String(adjustReason).trim() ? ` | السبب: ${String(adjustReason).trim()}` : '';
+        logAction('تعديل ساعات يدوي', `تم تعديل دقائق الإداري ${staff.username} بمقدار (${signText} دقيقة)${reasonText}`);
+    }
+
+    logAction('تحديث تفاصيل', `تم تحديث تفاصيل الإداري ${staff.username} (اسم FiveM: ${staff.fivemName || 'بدون'})`);
+    res.json({ success: true, totalMinutes: staff.totalMinutes });
 });
 
 app.post('/api/staff/reset/:id', (req, res) => {
