@@ -9,7 +9,7 @@ const DB_PATH = path.join(__dirname, 'data.json');
 function readDB() {
     try {
         if (!fs.existsSync(DB_PATH)) {
-            const def = { staff: [], packages: [], activations: [], auditLogs: [] };
+            const def = { staff: [], packages: [], activations: [], auditLogs: [], blacklist: [] };
             fs.writeFileSync(DB_PATH, JSON.stringify(def, null, 2), 'utf8');
             return def;
         }
@@ -19,9 +19,10 @@ function readDB() {
         if (!db.packages) db.packages = [];
         if (!db.activations) db.activations = [];
         if (!db.auditLogs) db.auditLogs = [];
+        if (!db.blacklist) db.blacklist = [];
         return db;
     } catch (e) {
-        return { staff: [], packages: [], activations: [], auditLogs: [] };
+        return { staff: [], packages: [], activations: [], auditLogs: [], blacklist: [] };
     }
 }
 
@@ -213,6 +214,15 @@ actClient.on('interactionCreate', async interaction => {
         const page = interaction.fields.getTextInputValue('page');
 
         await interaction.deferReply({ ephemeral: true });
+
+        // التحقق من وجود الآيدي في البلاك ليست قبل التفعيل
+        const checkDB = readDB();
+        const blacklistedUser = (checkDB.blacklist || []).find(b => b.discordId === did);
+        if (blacklistedUser) {
+            logAction('رفض تفعيل (بلاك ليست)', `تم رفض تفعيل الآيدي (${did}) بواسطة الإداري ${interaction.user.username} لأنه مدرج في البلاك ليست`);
+            return interaction.editReply(`🚫 **مرفوض — الشخص بلاك ليست!**\nالآيدي: \`${did}\`${blacklistedUser.reason ? `\nالسبب: ${blacklistedUser.reason}` : ''}`);
+        }
+
         try {
             const member = await interaction.guild.members.fetch(did);
             
@@ -265,7 +275,7 @@ actClient.login(ACTIVATION_BOT_TOKEN).catch(e => console.log('خطأ بوت ال
 // 4. تشغيل الموقع الإلكتروني (Dashboard)
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public'))); // قراءة مجلد الصور public
+app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
@@ -281,7 +291,7 @@ function isAuditAuthenticated(req) {
 
 app.get('/', async (req, res) => {
     if (!isAuthenticated(req)) {
-        return res.render('index', { authenticated: false, auditAuth: false, staffList: [], packages: [], activations: [], auditLogs: [] });
+        return res.render('index', { authenticated: false, auditAuth: false, staffList: [], packages: [], activations: [], auditLogs: [], blacklist: [] });
     }
 
     const db = readDB();
@@ -316,7 +326,8 @@ app.get('/', async (req, res) => {
         staffList: staffWithStats, 
         packages: (db.packages || []).slice().reverse(), 
         activations: (db.activations || []).slice().reverse(),
-        auditLogs: (db.auditLogs || []).slice().reverse()
+        auditLogs: (db.auditLogs || []).slice().reverse(),
+        blacklist: (db.blacklist || []).slice().reverse()
     });
 });
 
@@ -342,6 +353,48 @@ app.post('/api/audit/login', (req, res) => {
         return res.json({ success: true });
     }
     res.status(401).json({ success: false, message: '❌ رمز سجل العمليات غير صحيح!' });
+});
+
+// إدارة البلاك ليست
+app.post('/api/blacklist/add', async (req, res) => {
+    if (!isAuthenticated(req)) return res.status(401).json({ success: false });
+    const discordId = (req.body.discordId || '').trim();
+    const reason = (req.body.reason || '').trim();
+    if (!discordId) return res.status(400).json({ success: false, message: 'الرجاء إدخال الآيدي' });
+
+    let username = `User_${discordId}`;
+    try {
+        const response = await axios.get(`https://discord.com/api/v10/users/${discordId}`, { headers: { Authorization: `Bot ${ACTIVATION_BOT_TOKEN || NEW_BOT_TOKEN}` } });
+        const user = response.data;
+        username = user.global_name || user.username;
+    } catch (e) {}
+
+    const db = readDB();
+    if (!db.blacklist) db.blacklist = [];
+    if (db.blacklist.find(b => b.discordId === discordId)) {
+        return res.status(400).json({ success: false, message: 'هذا الآيدي مضاف مسبقاً في البلاك ليست' });
+    }
+
+    db.blacklist.push({
+        discordId,
+        username,
+        reason,
+        date: new Date().toLocaleString('ar-SA')
+    });
+    writeDB(db);
+    logAction('إضافة بلاك ليست', `تمت إضافة (${username} - ${discordId}) إلى البلاك ليست${reason ? ` | السبب: ${reason}` : ''}`);
+    res.json({ success: true });
+});
+
+app.delete('/api/blacklist/remove/:id', (req, res) => {
+    if (!isAuthenticated(req)) return res.status(401).json({ success: false });
+    const discordId = req.params.id;
+    const db = readDB();
+    const entry = (db.blacklist || []).find(b => b.discordId === discordId);
+    db.blacklist = (db.blacklist || []).filter(b => b.discordId !== discordId);
+    writeDB(db);
+    logAction('إزالة بلاك ليست', `تمت إزالة (${entry ? entry.username : discordId} - ${discordId}) من البلاك ليست`);
+    res.json({ success: true });
 });
 
 app.post('/api/staff/add', async (req, res) => {
