@@ -141,6 +141,7 @@
                     const totalMins = s.totalMinutes || 0;
                     const totalHrs = Math.floor(totalMins / 60);
                     const remMins = totalMins % 60;
+                    const logs = s.sessionLogs || [];
                 %>
                     <div onclick="openDetailsModal(this)" 
                          data-id="<%= s.discordId %>" 
@@ -154,12 +155,17 @@
                         <div class="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-[#b48e5c]/50 to-transparent opacity-0 group-hover:opacity-100 transition"></div>
 
                         <% if (s.inSupport) { %>
-                            <div class="mb-3.5 flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl">
-                                <span class="relative flex h-2.5 w-2.5">
-                                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                  <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                                </span>
-                                <span class="text-xs text-emerald-400 font-bold truncate">متواجد في: <%= s.channelName %></span>
+                            <div class="mb-3.5 flex items-center justify-between gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="relative flex h-2.5 w-2.5 shrink-0">
+                                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                      <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                                    </span>
+                                    <span class="text-xs text-emerald-400 font-bold truncate">متواجد في: <%= s.channelName %></span>
+                                </div>
+                                <% if (s.activeJoinClock) { %>
+                                    <span class="text-[11px] text-emerald-300/90 font-semibold shrink-0">دخول: <%= s.activeJoinClock %></span>
+                                <% } %>
                             </div>
                         <% } %>
 
@@ -199,20 +205,26 @@
                             </div>
                         </div>
 
-                        <!-- تفاصيل الجلسات اليومية بالساعات والدقائق -->
-                        <div class="border-t border-zinc-800/80 pt-3 max-h-28 overflow-y-auto space-y-1.5">
-                            <% if ((s.sessions || []).length === 0) { %>
+                        <!-- سجل الجلسات الفردية (دخول وخروج) -->
+                        <div class="border-t border-zinc-800/80 pt-3 max-h-36 overflow-y-auto space-y-1.5">
+                            <% if (logs.length === 0) { %>
                                 <p class="text-xs text-zinc-600 text-center py-2">لا توجد جلسات مسجلة</p>
                             <% } else { %>
-                                <% (s.sessions || []).forEach(sess => { 
-                                    const sMins = sess.minutes || 0;
+                                <% logs.forEach(item => { 
+                                    const sMins = item.minutes || 0;
                                     const sHrs = Math.floor(sMins / 60);
                                     const sRem = sMins % 60;
-                                    const formattedTime = sHrs > 0 ? `${sHrs} ساعة و ${sRem} دقيقة` : `${sRem} دقيقة`;
+                                    const durText = sHrs > 0 ? `${sHrs}س ${sRem}د` : `${sRem}د`;
                                 %>
-                                    <div class="flex justify-between items-center text-xs bg-[#151519] px-3 py-1.5 rounded-lg border border-zinc-800/50">
-                                        <span class="text-zinc-400"><%= sess.date %></span>
-                                        <span class="text-[#d4af7a] font-bold"><%= formattedTime %></span>
+                                    <div class="text-xs bg-[#151519] px-3 py-2 rounded-lg border border-zinc-800/60 space-y-1">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-zinc-400 font-semibold"><%= item.date %></span>
+                                            <span class="text-[#d4af7a] font-bold"><%= durText %></span>
+                                        </div>
+                                        <div class="flex justify-between items-center text-[11px] text-zinc-300">
+                                            <span>🟢 دخول: <b><%= item.joinTime %></b></span>
+                                            <span>🔴 خروج: <b><%= item.leaveTime %></b></span>
+                                        </div>
                                     </div>
                                 <% }) %>
                             <% } %>
