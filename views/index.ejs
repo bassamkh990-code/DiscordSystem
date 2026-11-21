@@ -137,14 +137,18 @@
             </div>
 
             <div id="staffGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <% staffList.forEach(s => { %>
+                <% staffList.forEach(s => { 
+                    const totalMins = s.totalMinutes || 0;
+                    const totalHrs = Math.floor(totalMins / 60);
+                    const remMins = totalMins % 60;
+                %>
                     <div onclick="openDetailsModal(this)" 
                          data-id="<%= s.discordId %>" 
                          data-username="<%= s.username %>" 
                          data-avatar="<%= s.avatar %>"
                          data-fivem="<%= s.fivemName || '' %>"
                          data-notes="<%= s.extraNotes || '' %>"
-                         data-minutes="<%= s.totalMinutes || 0 %>"
+                         data-minutes="<%= totalMins %>"
                          class="staff-card bg-[#0e0e11] p-5 rounded-2xl border border-zinc-800/90 hover:border-[#b48e5c]/70 hover:shadow-[0_0_25px_rgba(180,142,92,0.1)] cursor-pointer transition relative overflow-hidden group">
                         
                         <div class="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-[#b48e5c]/50 to-transparent opacity-0 group-hover:opacity-100 transition"></div>
@@ -170,7 +174,7 @@
                                         <% } %>
                                     </h3>
                                     <p class="text-xs text-[#d4af7a] font-bold mt-1">
-                                        ⏱️ <%= Math.floor((s.totalMinutes || 0) / 60) %> ساعة و <%= (s.totalMinutes || 0) % 60 %> دقيقة
+                                        ⏱️ <%= totalHrs %> ساعة و <%= remMins %> دقيقة
                                     </p>
                                 </div>
                             </div>
@@ -195,14 +199,20 @@
                             </div>
                         </div>
 
+                        <!-- تفاصيل الجلسات اليومية بالساعات والدقائق -->
                         <div class="border-t border-zinc-800/80 pt-3 max-h-28 overflow-y-auto space-y-1.5">
                             <% if ((s.sessions || []).length === 0) { %>
                                 <p class="text-xs text-zinc-600 text-center py-2">لا توجد جلسات مسجلة</p>
                             <% } else { %>
-                                <% (s.sessions || []).forEach(sess => { %>
-                                    <div class="flex justify-between text-xs bg-[#151519] px-3 py-1.5 rounded-lg border border-zinc-800/50">
+                                <% (s.sessions || []).forEach(sess => { 
+                                    const sMins = sess.minutes || 0;
+                                    const sHrs = Math.floor(sMins / 60);
+                                    const sRem = sMins % 60;
+                                    const formattedTime = sHrs > 0 ? `${sHrs} ساعة و ${sRem} دقيقة` : `${sRem} دقيقة`;
+                                %>
+                                    <div class="flex justify-between items-center text-xs bg-[#151519] px-3 py-1.5 rounded-lg border border-zinc-800/50">
                                         <span class="text-zinc-400"><%= sess.date %></span>
-                                        <span class="text-[#d4af7a] font-bold"><%= (sess.minutes / 60).toFixed(1) %> ساعة</span>
+                                        <span class="text-[#d4af7a] font-bold"><%= formattedTime %></span>
                                     </div>
                                 <% }) %>
                             <% } %>
@@ -216,9 +226,14 @@
         <!-- تبويب الحزم -->
         <div id="tab-packages" class="tab-content hidden">
             <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-                <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
-                    <span class="text-[#b48e5c]">📦</span> سجل الحزم
-                </h2>
+                <div class="flex items-center gap-3">
+                    <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+                        <span class="text-[#b48e5c]">📦</span> سجل الحزم
+                    </h2>
+                    <button id="pkgClearFilterBtn" onclick="clearStaffFilter('packages')" class="hidden bg-[#b48e5c]/15 hover:bg-[#b48e5c]/25 text-[#d4af7a] border border-[#b48e5c]/30 px-3 py-1 rounded-lg text-xs font-bold transition">
+                        ✕ إلغاء فلترة الإداري
+                    </button>
+                </div>
                 <div class="flex flex-wrap items-center gap-3">
                     <input type="text" id="pkgSearchInput" oninput="filterPackages()" placeholder="🔍 بحث بيوزر الشخص أو الإداري..." class="bg-[#0e0e11] border border-zinc-800 focus:border-[#b48e5c] p-2.5 rounded-xl w-72 text-sm text-white outline-none transition">
                     <select id="pkgFilterSelect" onchange="filterPackages()" class="bg-[#0e0e11] border border-zinc-800 focus:border-[#b48e5c] p-2.5 rounded-xl text-sm text-white outline-none transition">
@@ -243,7 +258,11 @@
                                 <tr class="pkg-row hover:bg-zinc-900/50 transition" data-user="<%= p.username %>" data-staff="<%= p.staffName %>" data-pkg="<%= p.packageName %>">
                                     <td class="p-3.5 font-bold text-white"><%= p.username %></td>
                                     <td class="p-3.5 text-[#d4af7a] font-bold"><%= p.packageName %></td>
-                                    <td class="p-3.5 text-zinc-300"><%= p.staffName %></td>
+                                    <td class="p-3.5">
+                                        <button onclick="filterByStaffName('packages', '<%= p.staffName %>')" title="فلترة حسب هذا الإداري" class="text-zinc-200 hover:text-[#d4af7a] underline decoration-[#b48e5c]/40 underline-offset-4 font-semibold transition">
+                                            <%= p.staffName %>
+                                        </button>
+                                    </td>
                                     <td class="p-3.5 text-zinc-400"><%= p.reason %></td>
                                     <td class="p-3.5 text-xs text-zinc-500"><%= p.date %></td>
                                 </tr>
@@ -258,9 +277,14 @@
         <!-- تبويب التفعيل -->
         <div id="tab-activations" class="tab-content hidden">
             <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-                <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
-                    <span class="text-[#b48e5c]">✅</span> سجل التفعيل
-                </h2>
+                <div class="flex items-center gap-3">
+                    <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+                        <span class="text-[#b48e5c]">✅</span> سجل التفعيل
+                    </h2>
+                    <button id="actClearFilterBtn" onclick="clearStaffFilter('activations')" class="hidden bg-[#b48e5c]/15 hover:bg-[#b48e5c]/25 text-[#d4af7a] border border-[#b48e5c]/30 px-3 py-1 rounded-lg text-xs font-bold transition">
+                        ✕ إلغاء فلترة الإداري
+                    </button>
+                </div>
                 <div class="flex flex-wrap items-center gap-3">
                     <input type="text" id="actSearchInput" oninput="filterActivations()" placeholder="🔍 بحث باليوزر أو الاسم العسكري أو الإداري..." class="bg-[#0e0e11] border border-zinc-800 focus:border-[#b48e5c] p-2.5 rounded-xl w-72 text-sm text-white outline-none transition">
                     <select id="actSectorSelect" onchange="filterActivations()" class="bg-[#0e0e11] border border-zinc-800 focus:border-[#b48e5c] p-2.5 rounded-xl text-sm text-white outline-none transition">
@@ -287,7 +311,11 @@
                                     <td class="p-3.5 font-bold text-white"><%= a.username %></td>
                                     <td class="p-3.5 text-[#d4af7a] font-bold"><%= a.nickname %></td>
                                     <td class="p-3.5 text-zinc-300"><%= a.sector %></td>
-                                    <td class="p-3.5 text-zinc-300"><%= a.staffName %></td>
+                                    <td class="p-3.5">
+                                        <button onclick="filterByStaffName('activations', '<%= a.staffName %>')" title="فلترة حسب هذا الإداري" class="text-zinc-200 hover:text-[#d4af7a] underline decoration-[#b48e5c]/40 underline-offset-4 font-semibold transition">
+                                            <%= a.staffName %>
+                                        </button>
+                                    </td>
                                     <td class="p-3.5 text-xs text-zinc-500"><%= a.date %></td>
                                 </tr>
                             <% }) %>
@@ -396,9 +424,9 @@
         </div>
     </div>
 
-    <!-- نافذة تفاصيل الإداري -->
+    <!-- نافذة تفاصيل الإداري + تعديل الدقائق يدوياً -->
     <div id="detailsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50">
-        <div class="bg-[#0e0e11] border border-[#b48e5c]/40 p-6 rounded-3xl max-w-md w-full mx-4 shadow-2xl">
+        <div class="bg-[#0e0e11] border border-[#b48e5c]/40 p-6 rounded-3xl max-w-md w-full mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="flex items-center gap-4 mb-5 border-b border-zinc-800 pb-4">
                 <img id="detAvatar" src="" class="w-14 h-14 rounded-full border-2 border-[#b48e5c] object-cover">
                 <div>
@@ -412,6 +440,16 @@
                     <label class="block text-sm font-bold text-zinc-300 mb-1.5">🎮 الاسم في FiveM</label>
                     <input type="text" id="detFivemInput" placeholder="اكتب اسم الإداري داخل السيرفر..." class="w-full bg-[#16161a] border border-zinc-800 focus:border-[#b48e5c] p-3 rounded-xl text-sm text-white outline-none transition">
                 </div>
+
+                <div class="bg-[#151519] border border-zinc-800/90 p-3.5 rounded-2xl space-y-3">
+                    <label class="block text-sm font-bold text-[#d4af7a]">⏱️ تعديل الساعات / الدقائق يدوياً</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <input type="number" id="detAdjustMinsInput" placeholder="مثال: 30 أو -15" class="w-full bg-[#0e0e11] border border-zinc-800 focus:border-[#b48e5c] p-2.5 rounded-xl text-sm text-white outline-none transition">
+                        <input type="text" id="detAdjustReasonInput" placeholder="سبب التعديل..." class="w-full bg-[#0e0e11] border border-zinc-800 focus:border-[#b48e5c] p-2.5 rounded-xl text-sm text-white outline-none transition">
+                    </div>
+                    <p class="text-[11px] text-zinc-400">اكتب رقم موجب للإضافة (مثلاً 60 = ساعة) أو سالب للخصم (مثلاً -30).</p>
+                </div>
+
                 <div>
                     <label class="block text-sm font-bold text-zinc-300 mb-1.5">📝 تفاصيل إضافية <span class="text-zinc-500 font-normal">(اختياري)</span></label>
                     <textarea id="detNotesInput" rows="3" placeholder="أضف أي ملاحظات أو تفاصيل إضافية هنا..." class="w-full bg-[#16161a] border border-zinc-800 focus:border-[#b48e5c] p-3 rounded-xl text-sm text-white outline-none resize-none transition"></textarea>
@@ -472,6 +510,31 @@
             });
             
             document.getElementById('btn-' + t).className = activeClass;
+        }
+
+        // فلترة الجداول بالضغط على اسم الإداري
+        function filterByStaffName(type, staffName) {
+            if (type === 'packages') {
+                document.getElementById('pkgSearchInput').value = staffName;
+                document.getElementById('pkgClearFilterBtn').classList.remove('hidden');
+                filterPackages();
+            } else if (type === 'activations') {
+                document.getElementById('actSearchInput').value = staffName;
+                document.getElementById('actClearFilterBtn').classList.remove('hidden');
+                filterActivations();
+            }
+        }
+
+        function clearStaffFilter(type) {
+            if (type === 'packages') {
+                document.getElementById('pkgSearchInput').value = '';
+                document.getElementById('pkgClearFilterBtn').classList.add('hidden');
+                filterPackages();
+            } else if (type === 'activations') {
+                document.getElementById('actSearchInput').value = '';
+                document.getElementById('actClearFilterBtn').classList.add('hidden');
+                filterActivations();
+            }
         }
 
         async function addToBlacklist() {
@@ -565,6 +628,8 @@
             const rows = document.querySelectorAll('.pkg-row');
             let visibleCount = 0;
 
+            if (!query) document.getElementById('pkgClearFilterBtn').classList.add('hidden');
+
             rows.forEach(row => {
                 const user = row.dataset.user.toLowerCase();
                 const staff = row.dataset.staff.toLowerCase();
@@ -586,6 +651,8 @@
             const sector = document.getElementById('actSectorSelect').value;
             const rows = document.querySelectorAll('.act-row');
             let visibleCount = 0;
+
+            if (!query) document.getElementById('actClearFilterBtn').classList.add('hidden');
 
             rows.forEach(row => {
                 const user = row.dataset.user.toLowerCase();
@@ -624,6 +691,8 @@
             document.getElementById('detDiscordId').innerText = card.dataset.id;
             document.getElementById('detFivemInput').value = card.dataset.fivem;
             document.getElementById('detNotesInput').value = card.dataset.notes;
+            document.getElementById('detAdjustMinsInput').value = '';
+            document.getElementById('detAdjustReasonInput').value = '';
 
             const modal = document.getElementById('detailsModal');
             modal.classList.remove('hidden');
@@ -641,11 +710,13 @@
             if (!currentDetailsId) return;
             const fivemName = document.getElementById('detFivemInput').value.trim();
             const extraNotes = document.getElementById('detNotesInput').value.trim();
+            const adjustMinutes = document.getElementById('detAdjustMinsInput').value.trim();
+            const adjustReason = document.getElementById('detAdjustReasonInput').value.trim();
 
             await fetch('/api/staff/details/' + currentDetailsId, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fivemName, extraNotes })
+                body: JSON.stringify({ fivemName, extraNotes, adjustMinutes, adjustReason })
             });
             location.reload();
         }
