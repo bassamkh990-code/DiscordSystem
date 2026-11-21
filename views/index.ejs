@@ -2,26 +2,50 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>لوحة التحكم والإحصائيات</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WHG | لوحة الإدارة والإحصائيات</title>
+    <link rel="icon" type="image/png" href="https://cdn.discordapp.com/attachments/1482157841136484538/1571222972436324442/whg-new-logo.png?ex=6b032d6c&is=6b01dbec&hm=38171f2b07caec8ff75ca9eed1e7320e748120947ae7cc124a1a33231d9faaa3&">
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #070708;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(180, 142, 92, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 85% 85%, rgba(180, 142, 92, 0.06) 0%, transparent 45%);
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0c0c0e; }
+        ::-webkit-scrollbar-thumb { background: #3f3324; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #b48e5c; }
+    </style>
 </head>
-<body class="bg-gray-950 text-white font-sans p-6">
+<body class="text-zinc-100 min-h-screen p-4 md:p-8 selection:bg-[#b48e5c] selection:text-black">
 
 <% if (!authenticated) { %>
+    <!-- شاشة تسجيل الدخول بهوية WHG -->
     <div class="min-h-[85vh] flex items-center justify-center">
-        <div class="bg-gray-900 border border-gray-800 p-8 rounded-2xl max-w-sm w-full shadow-2xl text-center">
-            <div class="w-16 h-16 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 border border-blue-500/30">
-                🔐
+        <div class="bg-[#0e0e11]/95 backdrop-blur-xl border border-[#b48e5c]/30 p-8 md:p-10 rounded-3xl max-w-md w-full shadow-[0_0_50px_rgba(180,142,92,0.12)] text-center relative overflow-hidden">
+            <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#b48e5c] to-transparent"></div>
+            
+            <div class="relative w-28 h-28 mx-auto mb-5">
+                <div class="absolute inset-0 rounded-full bg-[#b48e5c]/20 blur-xl"></div>
+                <img src="https://cdn.discordapp.com/attachments/1482157841136484538/1571222972436324442/whg-new-logo.png?ex=6b032d6c&is=6b01dbec&hm=38171f2b07caec8ff75ca9eed1e7320e748120947ae7cc124a1a33231d9faaa3&" alt="WHG Logo" class="relative w-28 h-28 rounded-full object-cover border-2 border-[#b48e5c] shadow-lg mx-auto">
             </div>
-            <h1 class="text-2xl font-bold text-white mb-1">تسجيل الدخول</h1>
-            <p class="text-sm text-gray-400 mb-6">أدخل رمز الدخول للوصول إلى لوحة التحكم</p>
+
+            <span class="inline-block text-xs font-bold tracking-widest uppercase text-[#b48e5c] bg-[#b48e5c]/10 border border-[#b48e5c]/20 px-3 py-1 rounded-full mb-2">
+                WHG ADMINISTRATION
+            </span>
+            <h1 class="text-2xl font-extrabold text-white mb-1">بوابة الإدارة المركزية</h1>
+            <p class="text-sm text-zinc-400 mb-7">أدخل رمز الدخول للوصول إلى لوحة التحكم</p>
 
             <form onsubmit="submitLogin(event)" class="space-y-4">
-                <input type="password" id="passcodeInput" placeholder="أدخل الرمز هنا..." autofocus
-                       class="w-full bg-gray-800 border border-gray-700 focus:border-blue-500 p-3 rounded-xl text-center text-lg tracking-widest text-white outline-none">
-                <p id="loginError" class="text-red-400 text-sm hidden"></p>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition">
-                    دخول
+                <input type="password" id="passcodeInput" placeholder="••••••••" autofocus
+                       class="w-full bg-[#16161a] border border-zinc-800 focus:border-[#b48e5c] p-3.5 rounded-xl text-center text-xl tracking-[0.3em] text-white outline-none transition">
+                <p id="loginError" class="text-red-400 text-sm hidden font-semibold"></p>
+                <button type="submit" class="w-full bg-gradient-to-r from-[#9e7b4d] via-[#b48e5c] to-[#9e7b4d] hover:brightness-110 text-black font-extrabold py-3.5 rounded-xl shadow-lg shadow-[#b48e5c]/20 transition">
+                    دخول اللوحة
                 </button>
             </form>
         </div>
@@ -52,34 +76,57 @@
 
 <% } else { %>
     <div class="max-w-7xl mx-auto">
-        <div class="flex items-center justify-between mb-6 border-b border-gray-800 pb-4">
-            <h1 class="text-3xl font-bold text-blue-400">🛡️ لوحة التحكم والإحصائيات</h1>
-            <button onclick="logout()" class="bg-gray-800 hover:bg-red-600/20 hover:text-red-400 text-gray-300 px-4 py-2 rounded-lg text-sm font-semibold border border-gray-700 transition">
-                🔒 قفل اللوحة
+        <!-- الهيدر العلوي -->
+        <header class="bg-[#0e0e11]/90 backdrop-blur-md border border-zinc-800/90 rounded-2xl p-4 md:p-5 mb-6 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+            <div class="flex items-center gap-4">
+                <img src="https://cdn.discordapp.com/attachments/1482157841136484538/1571222972436324442/whg-new-logo.png?ex=6b032d6c&is=6b01dbec&hm=38171f2b07caec8ff75ca9eed1e7320e748120947ae7cc124a1a33231d9faaa3&" alt="WHG" class="w-14 h-14 rounded-full object-cover border-2 border-[#b48e5c] shadow-[0_0_15px_rgba(180,142,92,0.3)]">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-xl md:text-2xl font-black text-white tracking-wide">WHG</h1>
+                        <span class="text-xs font-bold bg-[#b48e5c]/15 text-[#d4af7a] border border-[#b48e5c]/30 px-2.5 py-0.5 rounded-md">لوحة الإدارة</span>
+                    </div>
+                    <p class="text-xs text-zinc-400 mt-0.5">نظام إدارة شؤون الإداريين، الساعات، التفعيلات والحزم</p>
+                </div>
+            </div>
+
+            <button onclick="logout()" class="bg-[#16161a] hover:bg-red-950/40 hover:text-red-400 hover:border-red-500/40 text-zinc-300 px-4 py-2.5 rounded-xl text-sm font-bold border border-zinc-800 transition flex items-center gap-2">
+                <span>🔒</span>
+                <span>قفل اللوحة</span>
+            </button>
+        </header>
+
+        <!-- أزرار التنقل (Tabs) -->
+        <div class="flex flex-wrap gap-3 mb-7 bg-[#0e0e11] p-2 rounded-2xl border border-zinc-800/80">
+            <button onclick="showTab('staff')" id="btn-staff" class="bg-[#b48e5c] text-black px-5 py-2.5 rounded-xl font-extrabold text-sm transition shadow-md">
+                👥 الموظفين والساعات (<%= staffList.length %>)
+            </button>
+            <button onclick="showTab('packages')" id="btn-packages" class="bg-transparent hover:bg-zinc-800/70 text-zinc-300 px-5 py-2.5 rounded-xl font-bold text-sm transition">
+                📦 الحزم (<%= packages.length %>)
+            </button>
+            <button onclick="showTab('activations')" id="btn-activations" class="bg-transparent hover:bg-zinc-800/70 text-zinc-300 px-5 py-2.5 rounded-xl font-bold text-sm transition">
+                ✅ التفعيل (<%= activations.length %>)
+            </button>
+            <button onclick="showTab('audit')" id="btn-audit" class="bg-transparent hover:bg-zinc-800/70 text-zinc-300 px-5 py-2.5 rounded-xl font-bold text-sm transition">
+                📜 سجل العمليات (محمي)
             </button>
         </div>
 
-        <div class="flex flex-wrap gap-4 mb-8">
-            <button onclick="showTab('staff')" id="btn-staff" class="bg-blue-600 px-5 py-2 rounded-lg font-bold">👥 الموظفين والساعات (<%= staffList.length %>)</button>
-            <button onclick="showTab('packages')" id="btn-packages" class="bg-gray-800 px-5 py-2 rounded-lg font-bold">📦 الحزم (<%= packages.length %>)</button>
-            <button onclick="showTab('activations')" id="btn-activations" class="bg-gray-800 px-5 py-2 rounded-lg font-bold">✅ التفعيل (<%= activations.length %>)</button>
-            <button onclick="showTab('audit')" id="btn-audit" class="bg-gray-800 px-5 py-2 rounded-lg font-bold">📜 سجل العمليات (محمي)</button>
-        </div>
-
-        <!-- الموظفين -->
+        <!-- تبويب الموظفين -->
         <div id="tab-staff" class="tab-content">
-            <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 mb-6 flex flex-wrap items-center justify-between gap-4">
-                <div class="flex flex-wrap items-center gap-2">
-                    <input type="text" id="staffIdInput" placeholder="ضع Copy ID للإداري هنا..." class="bg-gray-800 border border-gray-700 p-2.5 rounded-lg w-60 text-white outline-none focus:border-green-500">
-                    <button onclick="addStaff()" class="bg-green-600 hover:bg-green-700 px-4 py-2.5 rounded-lg font-bold transition">+ إضافة إداري</button>
-                    <button onclick="resetAllStaffHours()" class="bg-amber-600/20 hover:bg-amber-600/40 text-amber-400 border border-amber-500/30 px-4 py-2.5 rounded-lg font-bold transition">
+            <div class="bg-[#0e0e11] p-4 rounded-2xl border border-zinc-800/90 mb-6 flex flex-wrap items-center justify-between gap-4 shadow-lg">
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <input type="text" id="staffIdInput" placeholder="ضع Copy ID للإداري هنا..." class="bg-[#16161a] border border-zinc-800 focus:border-[#b48e5c] p-2.5 rounded-xl w-60 text-sm text-white outline-none transition">
+                    <button onclick="addStaff()" class="bg-[#b48e5c] hover:bg-[#c69f6b] text-black px-4 py-2.5 rounded-xl font-extrabold text-sm transition shadow">
+                        + إضافة إداري
+                    </button>
+                    <button onclick="resetAllStaffHours()" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-4 py-2.5 rounded-xl font-bold text-sm transition">
                         🔄 تصفير ساعات الجميع
                     </button>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-3">
-                    <input type="text" id="staffSearchInput" oninput="filterStaff()" placeholder="🔍 بحث باليوزر أو اسم FiveM أو الآيدي..." class="bg-gray-800 border border-gray-700 focus:border-blue-500 p-2.5 rounded-lg w-72 text-white outline-none">
-                    <select id="staffSortSelect" onchange="filterStaff()" class="bg-gray-800 border border-gray-700 focus:border-blue-500 p-2.5 rounded-lg text-white outline-none">
+                    <input type="text" id="staffSearchInput" oninput="filterStaff()" placeholder="🔍 بحث باليوزر أو اسم FiveM أو الآيدي..." class="bg-[#16161a] border border-zinc-800 focus:border-[#b48e5c] p-2.5 rounded-xl w-72 text-sm text-white outline-none transition">
+                    <select id="staffSortSelect" onchange="filterStaff()" class="bg-[#16161a] border border-zinc-800 focus:border-[#b48e5c] p-2.5 rounded-xl text-sm text-white outline-none transition">
                         <option value="default">الترتيب الافتراضي</option>
                         <option value="most">الأكثر ساعات ⬆️</option>
                         <option value="least">الأقل ساعات ⬇️</option>
@@ -87,7 +134,7 @@
                 </div>
             </div>
 
-            <div id="staffGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div id="staffGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <% staffList.forEach(s => { %>
                     <div onclick="openDetailsModal(this)" 
                          data-id="<%= s.discordId %>" 
@@ -96,73 +143,83 @@
                          data-fivem="<%= s.fivemName || '' %>"
                          data-notes="<%= s.extraNotes || '' %>"
                          data-minutes="<%= s.totalMinutes || 0 %>"
-                         class="staff-card bg-gray-900 p-5 rounded-xl border border-gray-800 hover:border-blue-500/60 cursor-pointer transition">
+                         class="staff-card bg-[#0e0e11] p-5 rounded-2xl border border-zinc-800/90 hover:border-[#b48e5c]/70 hover:shadow-[0_0_25px_rgba(180,142,92,0.1)] cursor-pointer transition relative overflow-hidden group">
                         
+                        <div class="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-[#b48e5c]/50 to-transparent opacity-0 group-hover:opacity-100 transition"></div>
+
                         <% if (s.inSupport) { %>
-                            <div class="mb-3 flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-lg">
-                                <span class="relative flex h-3 w-3">
+                            <div class="mb-3.5 flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl">
+                                <span class="relative flex h-2.5 w-2.5">
                                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                  <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                                  <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                                 </span>
                                 <span class="text-xs text-emerald-400 font-bold truncate">متواجد في: <%= s.channelName %></span>
                             </div>
                         <% } %>
 
                         <div class="flex items-start justify-between gap-2 mb-4">
-                            <div class="flex items-center gap-3">
-                                <img src="<%= s.avatar %>" class="w-12 h-12 rounded-full border border-blue-500 shrink-0">
+                            <div class="flex items-center gap-3.5">
+                                <img src="<%= s.avatar %>" class="w-13 h-13 rounded-full border-2 border-[#b48e5c] shrink-0 object-cover">
                                 <div>
-                                    <h3 class="font-bold text-lg flex flex-wrap items-center gap-2">
+                                    <h3 class="font-bold text-base text-white flex flex-wrap items-center gap-2">
                                         <span><%= s.username %></span>
                                         <% if (s.fivemName) { %>
-                                            <span class="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full"><%= s.fivemName %></span>
+                                            <span class="text-xs bg-[#b48e5c]/15 text-[#d4af7a] border border-[#b48e5c]/30 px-2 py-0.5 rounded-md font-semibold"><%= s.fivemName %></span>
                                         <% } %>
                                     </h3>
-                                    <p class="text-sm text-blue-400 font-semibold">الإجمالي: <%= Math.floor((s.totalMinutes || 0) / 60) %> ساعة و <%= (s.totalMinutes || 0) % 60 %> دقيقة</p>
+                                    <p class="text-xs text-[#d4af7a] font-bold mt-1">
+                                        ⏱️ <%= Math.floor((s.totalMinutes || 0) / 60) %> ساعة و <%= (s.totalMinutes || 0) % 60 %> دقيقة
+                                    </p>
                                 </div>
                             </div>
                             <div class="flex flex-col gap-1.5 shrink-0">
-                                <button onclick="event.stopPropagation(); resetStaffHours('<%= s.discordId %>', '<%= s.username %>')" title="تصفير ساعات" class="bg-amber-600/20 hover:bg-amber-600/40 text-amber-400 px-2.5 py-1 rounded text-xs font-semibold transition">
+                                <button onclick="event.stopPropagation(); resetStaffHours('<%= s.discordId %>', '<%= s.username %>')" title="تصفير ساعات" class="bg-amber-500/10 hover:bg-amber-500/25 text-amber-400 border border-amber-500/20 px-2.5 py-1 rounded-lg text-xs font-bold transition">
                                     🔄 تصفير
                                 </button>
-                                <button onclick="event.stopPropagation(); openRemoveModal('<%= s.discordId %>', '<%= s.username %>')" class="bg-red-600/20 hover:bg-red-600/40 text-red-400 px-2.5 py-1 rounded text-xs font-semibold transition">
+                                <button onclick="event.stopPropagation(); openRemoveModal('<%= s.discordId %>', '<%= s.username %>')" class="bg-red-500/10 hover:bg-red-500/25 text-red-400 border border-red-500/20 px-2.5 py-1 rounded-lg text-xs font-bold transition">
                                     حذف
                                 </button>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-2 mb-3 bg-gray-950/60 p-2.5 rounded-xl border border-gray-800 text-center">
+                        <div class="grid grid-cols-2 gap-2.5 mb-3.5 bg-[#151519] p-2.5 rounded-xl border border-zinc-800/80 text-center">
                             <div>
-                                <p class="text-xs text-gray-400">التفعيلات</p>
-                                <p class="text-sm font-bold text-emerald-400"><%= s.activationsCount %> 👤</p>
+                                <p class="text-[11px] text-zinc-400">التفعيلات</p>
+                                <p class="text-sm font-extrabold text-emerald-400 mt-0.5"><%= s.activationsCount %> 👤</p>
                             </div>
-                            <div>
-                                <p class="text-xs text-gray-400">الحزم</p>
-                                <p class="text-sm font-bold text-purple-400"><%= s.packagesCount %> 📦</p>
+                            <div class="border-r border-zinc-800">
+                                <p class="text-[11px] text-zinc-400">الحزم</p>
+                                <p class="text-sm font-extrabold text-[#d4af7a] mt-0.5"><%= s.packagesCount %> 📦</p>
                             </div>
                         </div>
 
-                        <div class="border-t border-gray-800 pt-3 max-h-28 overflow-y-auto space-y-1">
-                            <% (s.sessions || []).forEach(sess => { %>
-                                <div class="flex justify-between text-sm bg-gray-800/50 px-3 py-1.5 rounded">
-                                    <span><%= sess.date %></span>
-                                    <span class="text-green-400 font-bold"><%= (sess.minutes / 60).toFixed(1) %> ساعة</span>
-                                </div>
-                            <% }) %>
+                        <div class="border-t border-zinc-800/80 pt-3 max-h-28 overflow-y-auto space-y-1.5">
+                            <% if ((s.sessions || []).length === 0) { %>
+                                <p class="text-xs text-zinc-600 text-center py-2">لا توجد جلسات مسجلة</p>
+                            <% } else { %>
+                                <% (s.sessions || []).forEach(sess => { %>
+                                    <div class="flex justify-between text-xs bg-[#151519] px-3 py-1.5 rounded-lg border border-zinc-800/50">
+                                        <span class="text-zinc-400"><%= sess.date %></span>
+                                        <span class="text-[#d4af7a] font-bold"><%= (sess.minutes / 60).toFixed(1) %> ساعة</span>
+                                    </div>
+                                <% }) %>
+                            <% } %>
                         </div>
                     </div>
                 <% }) %>
             </div>
-            <p id="noStaffMsg" class="hidden text-center text-gray-500 py-8">لا يوجد إداري مطابق لبحثك.</p>
+            <p id="noStaffMsg" class="hidden text-center text-zinc-500 py-10 font-semibold">لا يوجد إداري مطابق لبحثك.</p>
         </div>
 
-        <!-- الحزم -->
+        <!-- تبويب الحزم -->
         <div id="tab-packages" class="tab-content hidden">
             <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-                <h2 class="text-xl font-bold">📜 سجل الحزم</h2>
+                <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+                    <span class="text-[#b48e5c]">📦</span> سجل الحزم
+                </h2>
                 <div class="flex flex-wrap items-center gap-3">
-                    <input type="text" id="pkgSearchInput" oninput="filterPackages()" placeholder="🔍 بحث بيوزر الشخص أو الإداري..." class="bg-gray-900 border border-gray-700 focus:border-purple-500 p-2.5 rounded-lg w-72 text-white outline-none">
-                    <select id="pkgFilterSelect" onchange="filterPackages()" class="bg-gray-900 border border-gray-700 focus:border-purple-500 p-2.5 rounded-lg text-white outline-none">
+                    <input type="text" id="pkgSearchInput" oninput="filterPackages()" placeholder="🔍 بحث بيوزر الشخص أو الإداري..." class="bg-[#0e0e11] border border-zinc-800 focus:border-[#b48e5c] p-2.5 rounded-xl w-72 text-sm text-white outline-none transition">
+                    <select id="pkgFilterSelect" onchange="filterPackages()" class="bg-[#0e0e11] border border-zinc-800 focus:border-[#b48e5c] p-2.5 rounded-xl text-sm text-white outline-none transition">
                         <option value="all">جميع الحزم</option>
                         <option value="حزمة بلاتينيوم">💎 حزمة بلاتينيوم</option>
                         <option value="حزمة تيتانيوم">⚡ حزمة تيتانيوم</option>
@@ -171,38 +228,40 @@
                 </div>
             </div>
 
-            <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+            <div class="bg-[#0e0e11] rounded-2xl border border-zinc-800/90 overflow-hidden shadow-xl">
                 <table class="w-full text-right">
-                    <thead class="bg-gray-800 text-gray-300">
-                        <tr><th class="p-3">الشخص</th><th class="p-3">الحزمة</th><th class="p-3">الإداري</th><th class="p-3">السبب</th><th class="p-3">الوقت</th></tr>
+                    <thead class="bg-[#151519] text-zinc-300 text-sm border-b border-zinc-800">
+                        <tr><th class="p-3.5">الشخص</th><th class="p-3.5">الحزمة</th><th class="p-3.5">الإداري</th><th class="p-3.5">السبب</th><th class="p-3.5">الوقت</th></tr>
                     </thead>
-                    <tbody id="packagesTableBody" class="divide-y divide-gray-800">
+                    <tbody id="packagesTableBody" class="divide-y divide-zinc-800/70 text-sm">
                         <% if(packages.length === 0) { %>
-                            <tr><td colspan="5" class="p-4 text-center text-gray-500">لا توجد حزم مسجلة حتى الآن</td></tr>
+                            <tr><td colspan="5" class="p-6 text-center text-zinc-500">لا توجد حزم مسجلة حتى الآن</td></tr>
                         <% } else { %>
                             <% packages.forEach(p => { %>
-                                <tr class="pkg-row" data-user="<%= p.username %>" data-staff="<%= p.staffName %>" data-pkg="<%= p.packageName %>">
-                                    <td class="p-3 font-semibold"><%= p.username %></td>
-                                    <td class="p-3 text-purple-400"><%= p.packageName %></td>
-                                    <td class="p-3"><%= p.staffName %></td>
-                                    <td class="p-3"><%= p.reason %></td>
-                                    <td class="p-3 text-sm text-gray-400"><%= p.date %></td>
+                                <tr class="pkg-row hover:bg-zinc-900/50 transition" data-user="<%= p.username %>" data-staff="<%= p.staffName %>" data-pkg="<%= p.packageName %>">
+                                    <td class="p-3.5 font-bold text-white"><%= p.username %></td>
+                                    <td class="p-3.5 text-[#d4af7a] font-bold"><%= p.packageName %></td>
+                                    <td class="p-3.5 text-zinc-300"><%= p.staffName %></td>
+                                    <td class="p-3.5 text-zinc-400"><%= p.reason %></td>
+                                    <td class="p-3.5 text-xs text-zinc-500"><%= p.date %></td>
                                 </tr>
                             <% }) %>
                         <% } %>
                     </tbody>
                 </table>
-                <p id="noPkgMsg" class="hidden p-4 text-center text-gray-500">لا توجد نتائج مطابقة للبحث.</p>
+                <p id="noPkgMsg" class="hidden p-6 text-center text-zinc-500">لا توجد نتائج مطابقة للبحث.</p>
             </div>
         </div>
 
-        <!-- التفعيل -->
+        <!-- تبويب التفعيل -->
         <div id="tab-activations" class="tab-content hidden">
             <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-                <h2 class="text-xl font-bold">📜 سجل التفعيل</h2>
+                <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+                    <span class="text-[#b48e5c]">✅</span> سجل التفعيل
+                </h2>
                 <div class="flex flex-wrap items-center gap-3">
-                    <input type="text" id="actSearchInput" oninput="filterActivations()" placeholder="🔍 بحث باليوزر أو الاسم العسكري أو الإداري..." class="bg-gray-900 border border-gray-700 focus:border-emerald-500 p-2.5 rounded-lg w-72 text-white outline-none">
-                    <select id="actSectorSelect" onchange="filterActivations()" class="bg-gray-900 border border-gray-700 focus:border-emerald-500 p-2.5 rounded-lg text-white outline-none">
+                    <input type="text" id="actSearchInput" oninput="filterActivations()" placeholder="🔍 بحث باليوزر أو الاسم العسكري أو الإداري..." class="bg-[#0e0e11] border border-zinc-800 focus:border-[#b48e5c] p-2.5 rounded-xl w-72 text-sm text-white outline-none transition">
+                    <select id="actSectorSelect" onchange="filterActivations()" class="bg-[#0e0e11] border border-zinc-800 focus:border-[#b48e5c] p-2.5 rounded-xl text-sm text-white outline-none transition">
                         <option value="all">جميع القطاعات</option>
                         <option value="أمن الطرق">أمن الطرق</option>
                         <option value="الشرطة">الشرطة</option>
@@ -212,72 +271,72 @@
                 </div>
             </div>
 
-            <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+            <div class="bg-[#0e0e11] rounded-2xl border border-zinc-800/90 overflow-hidden shadow-xl">
                 <table class="w-full text-right">
-                    <thead class="bg-gray-800 text-gray-300">
-                        <tr><th class="p-3">العضو</th><th class="p-3">الاسم العسكري</th><th class="p-3">القطاع</th><th class="p-3">الإداري</th><th class="p-3">الوقت</th></tr>
+                    <thead class="bg-[#151519] text-zinc-300 text-sm border-b border-zinc-800">
+                        <tr><th class="p-3.5">العضو</th><th class="p-3.5">الاسم العسكري</th><th class="p-3.5">القطاع</th><th class="p-3.5">الإداري</th><th class="p-3.5">الوقت</th></tr>
                     </thead>
-                    <tbody id="activationsTableBody" class="divide-y divide-gray-800">
+                    <tbody id="activationsTableBody" class="divide-y divide-zinc-800/70 text-sm">
                         <% if(activations.length === 0) { %>
-                            <tr><td colspan="5" class="p-4 text-center text-gray-500">لا توجد عمليات تفعيل مسجلة حتى الآن</td></tr>
+                            <tr><td colspan="5" class="p-6 text-center text-zinc-500">لا توجد عمليات تفعيل مسجلة حتى الآن</td></tr>
                         <% } else { %>
                             <% activations.forEach(a => { %>
-                                <tr class="act-row" data-user="<%= a.username %>" data-nick="<%= a.nickname %>" data-staff="<%= a.staffName %>" data-sector="<%= a.sector %>">
-                                    <td class="p-3 font-semibold"><%= a.username %></td>
-                                    <td class="p-3 text-emerald-400"><%= a.nickname %></td>
-                                    <td class="p-3"><%= a.sector %></td>
-                                    <td class="p-3"><%= a.staffName %></td>
-                                    <td class="p-3 text-sm text-gray-400"><%= a.date %></td>
+                                <tr class="act-row hover:bg-zinc-900/50 transition" data-user="<%= a.username %>" data-nick="<%= a.nickname %>" data-staff="<%= a.staffName %>" data-sector="<%= a.sector %>">
+                                    <td class="p-3.5 font-bold text-white"><%= a.username %></td>
+                                    <td class="p-3.5 text-[#d4af7a] font-bold"><%= a.nickname %></td>
+                                    <td class="p-3.5 text-zinc-300"><%= a.sector %></td>
+                                    <td class="p-3.5 text-zinc-300"><%= a.staffName %></td>
+                                    <td class="p-3.5 text-xs text-zinc-500"><%= a.date %></td>
                                 </tr>
                             <% }) %>
                         <% } %>
                     </tbody>
                 </table>
-                <p id="noActMsg" class="hidden p-4 text-center text-gray-500">لا توجد نتائج مطابقة للبحث.</p>
+                <p id="noActMsg" class="hidden p-6 text-center text-zinc-500">لا توجد نتائج مطابقة للبحث.</p>
             </div>
         </div>
 
-        <!-- سجل العمليات (محمي برمز خاص) -->
+        <!-- تبويب سجل العمليات -->
         <div id="tab-audit" class="tab-content hidden">
             <% if (!auditAuth) { %>
-                <!-- شاشة طلب رمز سجل العمليات -->
-                <div class="bg-gray-900 border border-gray-800 p-8 rounded-2xl max-w-md w-full mx-auto my-12 text-center shadow-2xl">
-                    <div class="w-14 h-14 bg-amber-600/20 text-amber-400 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-4 border border-amber-500/30">
+                <div class="bg-[#0e0e11] border border-[#b48e5c]/30 p-8 rounded-3xl max-w-md w-full mx-auto my-12 text-center shadow-2xl">
+                    <div class="w-16 h-16 bg-[#b48e5c]/15 text-[#d4af7a] rounded-2xl flex items-center justify-center text-2xl mx-auto mb-4 border border-[#b48e5c]/30">
                         🔒
                     </div>
-                    <h2 class="text-xl font-bold text-white mb-1">سجل العمليات محمي</h2>
-                    <p class="text-sm text-gray-400 mb-6">أدخل رمز الدخول الخاص بسجل العمليات لعرض السجلات</p>
+                    <h2 class="text-xl font-extrabold text-white mb-1">سجل العمليات محمي</h2>
+                    <p class="text-sm text-zinc-400 mb-6">أدخل رمز الدخول الخاص بسجل العمليات لعرض السجلات</p>
 
                     <form onsubmit="submitAuditLogin(event)" class="space-y-4">
-                        <input type="password" id="auditPassInput" placeholder="أدخل رمز سجل العمليات..." autofocus
-                               class="w-full bg-gray-800 border border-gray-700 focus:border-amber-500 p-3 rounded-xl text-center text-lg tracking-widest text-white outline-none">
-                        <p id="auditLoginError" class="text-red-400 text-sm hidden"></p>
-                        <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 rounded-xl transition">
+                        <input type="password" id="auditPassInput" placeholder="••••••••" autofocus
+                               class="w-full bg-[#16161a] border border-zinc-800 focus:border-[#b48e5c] p-3.5 rounded-xl text-center text-lg tracking-[0.3em] text-white outline-none transition">
+                        <p id="auditLoginError" class="text-red-400 text-sm hidden font-semibold"></p>
+                        <button type="submit" class="w-full bg-[#b48e5c] hover:bg-[#c69f6b] text-black font-extrabold py-3 rounded-xl transition">
                             فتح السجل
                         </button>
                     </form>
                 </div>
             <% } else { %>
-                <!-- جدول السجلات بعد إدخال الرمز الصحيح -->
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-bold">📜 سجل الحركات والعمليات الإدارية</h2>
-                    <span class="text-xs text-gray-400 bg-gray-900 px-3 py-1.5 rounded-lg border border-gray-800">مفتوح بأمان 🔓</span>
+                    <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+                        <span class="text-[#b48e5c]">📜</span> سجل الحركات والعمليات الإدارية
+                    </h2>
+                    <span class="text-xs font-bold text-[#d4af7a] bg-[#b48e5c]/15 px-3 py-1.5 rounded-xl border border-[#b48e5c]/30">مفتوح بأمان 🔓</span>
                 </div>
 
-                <div class="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+                <div class="bg-[#0e0e11] rounded-2xl border border-zinc-800/90 overflow-hidden shadow-xl">
                     <table class="w-full text-right">
-                        <thead class="bg-gray-800 text-gray-300">
-                            <tr><th class="p-3">نوع الحركة</th><th class="p-3">التفاصيل</th><th class="p-3">الوقت</th></tr>
+                        <thead class="bg-[#151519] text-zinc-300 text-sm border-b border-zinc-800">
+                            <tr><th class="p-3.5">نوع الحركة</th><th class="p-3.5">التفاصيل</th><th class="p-3.5">الوقت</th></tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-800">
+                        <tbody class="divide-y divide-zinc-800/70 text-sm">
                             <% if(auditLogs.length === 0) { %>
-                                <tr><td colspan="3" class="p-4 text-center text-gray-500">لا توجد عمليات مسجلة حتى الآن</td></tr>
+                                <tr><td colspan="3" class="p-6 text-center text-zinc-500">لا توجد عمليات مسجلة حتى الآن</td></tr>
                             <% } else { %>
                                 <% auditLogs.forEach(log => { %>
-                                    <tr>
-                                        <td class="p-3 font-semibold text-amber-400"><%= log.action %></td>
-                                        <td class="p-3 text-gray-300"><%= log.details %></td>
-                                        <td class="p-3 text-sm text-gray-400"><%= log.date %></td>
+                                    <tr class="hover:bg-zinc-900/50 transition">
+                                        <td class="p-3.5 font-bold text-[#d4af7a]"><%= log.action %></td>
+                                        <td class="p-3.5 text-zinc-300"><%= log.details %></td>
+                                        <td class="p-3.5 text-xs text-zinc-500"><%= log.date %></td>
                                     </tr>
                                 <% }) %>
                             <% } %>
@@ -289,32 +348,32 @@
     </div>
 
     <!-- نافذة تفاصيل الإداري -->
-    <div id="detailsModal" class="fixed inset-0 bg-black/75 hidden items-center justify-center z-50">
-        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl max-w-md w-full mx-4 shadow-2xl">
-            <div class="flex items-center gap-4 mb-5 border-b border-gray-800 pb-4">
-                <img id="detAvatar" src="" class="w-14 h-14 rounded-full border-2 border-blue-500">
+    <div id="detailsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div class="bg-[#0e0e11] border border-[#b48e5c]/40 p-6 rounded-3xl max-w-md w-full mx-4 shadow-2xl">
+            <div class="flex items-center gap-4 mb-5 border-b border-zinc-800 pb-4">
+                <img id="detAvatar" src="" class="w-14 h-14 rounded-full border-2 border-[#b48e5c] object-cover">
                 <div>
-                    <h3 id="detUsername" class="text-xl font-bold text-white"></h3>
-                    <p class="text-xs text-gray-400 mt-0.5">ID: <span id="detDiscordId" class="font-mono text-gray-300"></span></p>
+                    <h3 id="detUsername" class="text-xl font-extrabold text-white"></h3>
+                    <p class="text-xs text-zinc-400 mt-0.5">ID: <span id="detDiscordId" class="font-mono text-[#d4af7a]"></span></p>
                 </div>
             </div>
 
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-300 mb-1.5">🎮 الاسم في FiveM</label>
-                    <input type="text" id="detFivemInput" placeholder="اكتب اسم الإداري داخل السيرفر..." class="w-full bg-gray-800 border border-gray-700 focus:border-blue-500 p-2.5 rounded-xl text-white outline-none">
+                    <label class="block text-sm font-bold text-zinc-300 mb-1.5">🎮 الاسم في FiveM</label>
+                    <input type="text" id="detFivemInput" placeholder="اكتب اسم الإداري داخل السيرفر..." class="w-full bg-[#16161a] border border-zinc-800 focus:border-[#b48e5c] p-3 rounded-xl text-sm text-white outline-none transition">
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-300 mb-1.5">📝 تفاصيل إضافية <span class="text-gray-500 font-normal">(اختياري)</span></label>
-                    <textarea id="detNotesInput" rows="3" placeholder="أضف أي ملاحظات أو تفاصيل إضافية هنا..." class="w-full bg-gray-800 border border-gray-700 focus:border-blue-500 p-2.5 rounded-xl text-white outline-none resize-none"></textarea>
+                    <label class="block text-sm font-bold text-zinc-300 mb-1.5">📝 تفاصيل إضافية <span class="text-zinc-500 font-normal">(اختياري)</span></label>
+                    <textarea id="detNotesInput" rows="3" placeholder="أضف أي ملاحظات أو تفاصيل إضافية هنا..." class="w-full bg-[#16161a] border border-zinc-800 focus:border-[#b48e5c] p-3 rounded-xl text-sm text-white outline-none resize-none transition"></textarea>
                 </div>
             </div>
 
             <div class="flex gap-3 mt-6">
-                <button onclick="saveStaffDetails()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl transition">
+                <button onclick="saveStaffDetails()" class="flex-1 bg-[#b48e5c] hover:bg-[#c69f6b] text-black font-extrabold py-2.5 px-4 rounded-xl transition">
                     💾 حفظ التفاصيل
                 </button>
-                <button onclick="closeDetailsModal()" class="bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold py-2.5 px-5 rounded-xl transition">
+                <button onclick="closeDetailsModal()" class="bg-[#16161a] hover:bg-zinc-800 text-zinc-300 font-bold py-2.5 px-5 rounded-xl border border-zinc-800 transition">
                     إغلاق
                 </button>
             </div>
@@ -322,21 +381,21 @@
     </div>
 
     <!-- نافذة خيارات حذف الإداري -->
-    <div id="removeModal" class="fixed inset-0 bg-black/75 hidden items-center justify-center z-50">
-        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl max-w-md w-full mx-4 shadow-2xl">
-            <h3 class="text-xl font-bold text-white mb-2">إزالة الإداري: <span id="modalStaffName" class="text-blue-400"></span></h3>
-            <p class="text-gray-400 text-sm mb-6">سيتم سحب رتبة الإدارة تلقائياً. اختر الإجراء والرتبة التي تريد منحها للعضو:</p>
+    <div id="removeModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div class="bg-[#0e0e11] border border-zinc-800 p-6 rounded-3xl max-w-md w-full mx-4 shadow-2xl">
+            <h3 class="text-xl font-extrabold text-white mb-2">إزالة الإداري: <span id="modalStaffName" class="text-[#d4af7a]"></span></h3>
+            <p class="text-zinc-400 text-sm mb-6">سيتم سحب رتبة الإدارة تلقائياً. اختر الإجراء والرتبة التي تريد منحها للعضو:</p>
             
             <div class="space-y-3">
-                <button onclick="confirmRemove('thanks')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition">
+                <button onclick="confirmRemove('thanks')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition">
                     <span>🏅</span>
                     <span>شكراً لخدمتك الإدارية</span>
                 </button>
-                <button onclick="confirmRemove('ban')" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition">
+                <button onclick="confirmRemove('ban')" class="w-full bg-red-600 hover:bg-red-500 text-white font-extrabold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition">
                     <span>🚫</span>
                     <span>محظور من دخول الإدارة</span>
                 </button>
-                <button onclick="closeRemoveModal()" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold py-2.5 px-4 rounded-xl mt-2 transition">
+                <button onclick="closeRemoveModal()" class="w-full bg-[#16161a] hover:bg-zinc-800 text-zinc-300 font-bold py-2.5 px-4 rounded-xl mt-2 border border-zinc-800 transition">
                     إلغاء
                 </button>
             </div>
@@ -356,15 +415,15 @@
             document.querySelectorAll('.tab-content').forEach(e => e.classList.add('hidden')); 
             document.getElementById('tab-' + t).classList.remove('hidden'); 
             
-            document.getElementById('btn-staff').className = 'bg-gray-800 px-5 py-2 rounded-lg font-bold';
-            document.getElementById('btn-packages').className = 'bg-gray-800 px-5 py-2 rounded-lg font-bold';
-            document.getElementById('btn-activations').className = 'bg-gray-800 px-5 py-2 rounded-lg font-bold';
-            document.getElementById('btn-audit').className = 'bg-gray-800 px-5 py-2 rounded-lg font-bold';
+            const defaultClass = 'bg-transparent hover:bg-zinc-800/70 text-zinc-300 px-5 py-2.5 rounded-xl font-bold text-sm transition';
+            const activeClass = 'bg-[#b48e5c] text-black px-5 py-2.5 rounded-xl font-extrabold text-sm transition shadow-md';
+
+            document.getElementById('btn-staff').className = defaultClass;
+            document.getElementById('btn-packages').className = defaultClass;
+            document.getElementById('btn-activations').className = defaultClass;
+            document.getElementById('btn-audit').className = defaultClass;
             
-            if(t === 'staff') document.getElementById('btn-staff').className = 'bg-blue-600 px-5 py-2 rounded-lg font-bold';
-            if(t === 'packages') document.getElementById('btn-packages').className = 'bg-purple-600 px-5 py-2 rounded-lg font-bold';
-            if(t === 'activations') document.getElementById('btn-activations').className = 'bg-emerald-600 px-5 py-2 rounded-lg font-bold';
-            if(t === 'audit') document.getElementById('btn-audit').className = 'bg-amber-600 px-5 py-2 rounded-lg font-bold';
+            document.getElementById('btn-' + t).className = activeClass;
         }
 
         async function submitAuditLogin(e) {
