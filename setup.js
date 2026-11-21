@@ -265,6 +265,7 @@ actClient.login(ACTIVATION_BOT_TOKEN).catch(e => console.log('خطأ بوت ال
 // 4. تشغيل الموقع الإلكتروني (Dashboard)
 const app = express();
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public'))); // قراءة مجلد الصور public
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
