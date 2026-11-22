@@ -176,19 +176,23 @@ function formatClock(dateObj) {
     return dateObj.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
 }
 
+function makeRecordId() {
+    return `${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+}
+
 // دالة لتسجيل العمليات تلقائياً
 function logAction(action, details) {
     writeChain = writeChain
         .then(() => {
             const db = readDB();
             db.auditLogs.push({
-                id: Date.now().toString() + '_' + Math.floor(Math.random() * 1000),
+                id: makeRecordId(),
                 action,
                 details,
                 date: new Date().toLocaleString('ar-SA')
             });
-            if (db.auditLogs.length > 100) {
-                db.auditLogs = db.auditLogs.slice(-100);
+            if (db.auditLogs.length > 150) {
+                db.auditLogs = db.auditLogs.slice(-150);
             }
             const serialized = writeLocalDBSync(db);
             scheduleGitHubSync(serialized);
@@ -269,7 +273,7 @@ mainClient.on('voiceStateUpdate', async (oldState, newState) => {
             if (!Array.isArray(staff.sessionLogs)) staff.sessionLogs = [];
 
             staff.sessionLogs.push({
-                id: Date.now().toString() + '_' + Math.floor(Math.random() * 1000),
+                id: makeRecordId(),
                 date: today,
                 channelName,
                 joinTime: formatClock(startDate),
@@ -338,6 +342,7 @@ packageClient.on('interactionCreate', async interaction => {
 
             const db = readDB();
             db.packages.push({
+                id: makeRecordId(),
                 username: member.user.username,
                 packageName: pkgName,
                 staffId: interaction.user.id,
@@ -429,6 +434,7 @@ actClient.on('interactionCreate', async interaction => {
 
             const db = readDB();
             db.activations.push({
+                id: makeRecordId(),
                 username: member.user.username,
                 nickname: newNick,
                 sector: SECTOR_NAMES[secKey] || secKey,
@@ -512,12 +518,22 @@ app.get('/', async (req, res) => {
         };
     }));
 
+    const packagesWithIndex = (db.packages || []).map((item, idx) => ({
+        ...item,
+        _key: item.id || `pkg_${idx}_${item.username || ''}_${item.date || ''}`
+    })).reverse();
+
+    const activationsWithIndex = (db.activations || []).map((item, idx) => ({
+        ...item,
+        _key: item.id || `act_${idx}_${item.username || ''}_${item.date || ''}`
+    })).reverse();
+
     res.render('index', {
         authenticated: true,
         auditAuth,
         staffList: staffWithStats,
-        packages: (db.packages || []).slice().reverse(),
-        activations: (db.activations || []).slice().reverse(),
+        packages: packagesWithIndex,
+        activations: activationsWithIndex,
         auditLogs: (db.auditLogs || []).slice().reverse(),
         blacklist: (db.blacklist || []).slice().reverse()
     });
@@ -545,6 +561,56 @@ app.post('/api/audit/login', (req, res) => {
         return res.json({ success: true });
     }
     res.status(401).json({ success: false, message: '❌ رمز سجل العمليات غير صحيح!' });
+});
+
+// حذف سجل حزمة
+app.delete('/api/packages/remove/:key', async (req, res) => {
+    if (!isAuthenticated(req)) return res.status(401).json({ success: false });
+    const targetKey = decodeURIComponent(req.params.key || '');
+    const db = readDB();
+    const list = Array.isArray(db.packages) ? db.packages : [];
+
+    const idx = list.findIndex((item, i) => {
+        const key = item.id || `pkg_${i}_${item.username || ''}_${item.date || ''}`;
+        return key === targetKey;
+    });
+
+    if (idx === -1) {
+        return res.status(404).json({ success: false, message: 'السجل غير موجود' });
+    }
+
+    const removed = list[idx];
+    list.splice(idx, 1);
+    db.packages = list;
+
+    await writeDB(db);
+    await logAction('حذف سجل حزمة', `تم حذف سجل (${removed.packageName || 'حزمة'}) الخاص بالعضو (${removed.username || 'غير معروف'})`);
+    res.json({ success: true });
+});
+
+// حذف سجل تفعيل
+app.delete('/api/activations/remove/:key', async (req, res) => {
+    if (!isAuthenticated(req)) return res.status(401).json({ success: false });
+    const targetKey = decodeURIComponent(req.params.key || '');
+    const db = readDB();
+    const list = Array.isArray(db.activations) ? db.activations : [];
+
+    const idx = list.findIndex((item, i) => {
+        const key = item.id || `act_${i}_${item.username || ''}_${item.date || ''}`;
+        return key === targetKey;
+    });
+
+    if (idx === -1) {
+        return res.status(404).json({ success: false, message: 'السجل غير موجود' });
+    }
+
+    const removed = list[idx];
+    list.splice(idx, 1);
+    db.activations = list;
+
+    await writeDB(db);
+    await logAction('حذف سجل تفعيل', `تم حذف سجل تفعيل العضو (${removed.username || 'غير معروف'}) في قطاع (${removed.sector || 'غير محدد'})`);
+    res.json({ success: true });
 });
 
 // إدارة البلاك ليست
