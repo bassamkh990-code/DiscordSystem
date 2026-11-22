@@ -79,6 +79,19 @@
     const safeActivations = Array.isArray(activations) ? activations : [];
     const safeBlacklist = Array.isArray(blacklist) ? blacklist : [];
     const safeAuditLogs = Array.isArray(auditLogs) ? auditLogs : [];
+
+    const pkgCounts = {
+        platinum: safePackages.filter(p => p.packageName === 'حزمة بلاتينيوم').length,
+        titanium: safePackages.filter(p => p.packageName === 'حزمة تيتانيوم').length,
+        crawl: safePackages.filter(p => p.packageName === 'حزمة زحف').length
+    };
+
+    const actCounts = {
+        sec: safeActivations.filter(a => a.sector === 'أمن الطرق').length,
+        pol: safeActivations.filter(a => a.sector === 'الشرطة').length,
+        traf: safeActivations.filter(a => a.sector === 'المرور').length,
+        sf: safeActivations.filter(a => a.sector === 'دوريات الأمن').length
+    };
 %>
     <div class="max-w-7xl mx-auto">
         <!-- الهيدر العلوي -->
@@ -254,7 +267,7 @@
                     </button>
                 </div>
                 <div class="flex flex-wrap items-center gap-3">
-                    <input type="text" id="pkgSearchInput" oninput="filterPackages()" placeholder="🔍 بحث بيوزر الشخص أو الإداري..." class="bg-[#0e0e11] border border-zinc-800 focus:border-[#b48e5c] p-2.5 rounded-xl w-72 text-sm text-white outline-none transition">
+                    <input type="text" id="pkgSearchInput" oninput="filterPackages()" placeholder="🔍 بحث بيوزر الشخص أو الإداري أو السبب..." class="bg-[#0e0e11] border border-zinc-800 focus:border-[#b48e5c] p-2.5 rounded-xl w-72 text-sm text-white outline-none transition">
                     <select id="pkgFilterSelect" onchange="filterPackages()" class="bg-[#0e0e11] border border-zinc-800 focus:border-[#b48e5c] p-2.5 rounded-xl text-sm text-white outline-none transition">
                         <option value="all">جميع الحزم</option>
                         <option value="حزمة بلاتينيوم">💎 حزمة بلاتينيوم</option>
@@ -264,17 +277,40 @@
                 </div>
             </div>
 
+            <!-- ملخص توزيع الحزم -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                <div class="bg-[#0e0e11] border border-zinc-800/90 rounded-2xl p-3.5 flex items-center justify-between">
+                    <span class="text-sm font-bold text-zinc-300">💎 حزمة بلاتينيوم</span>
+                    <span class="text-base font-black text-[#d4af7a]"><%= pkgCounts.platinum %></span>
+                </div>
+                <div class="bg-[#0e0e11] border border-zinc-800/90 rounded-2xl p-3.5 flex items-center justify-between">
+                    <span class="text-sm font-bold text-zinc-300">⚡ حزمة تيتانيوم</span>
+                    <span class="text-base font-black text-[#d4af7a]"><%= pkgCounts.titanium %></span>
+                </div>
+                <div class="bg-[#0e0e11] border border-zinc-800/90 rounded-2xl p-3.5 flex items-center justify-between">
+                    <span class="text-sm font-bold text-zinc-300">🚀 حزمة زحف</span>
+                    <span class="text-base font-black text-[#d4af7a]"><%= pkgCounts.crawl %></span>
+                </div>
+            </div>
+
             <div class="bg-[#0e0e11] rounded-2xl border border-zinc-800/90 overflow-hidden shadow-xl">
                 <table class="w-full text-right">
                     <thead class="bg-[#151519] text-zinc-300 text-sm border-b border-zinc-800">
-                        <tr><th class="p-3.5">الشخص</th><th class="p-3.5">الحزمة</th><th class="p-3.5">الإداري</th><th class="p-3.5">السبب</th><th class="p-3.5">الوقت</th></tr>
+                        <tr>
+                            <th class="p-3.5">الشخص</th>
+                            <th class="p-3.5">الحزمة</th>
+                            <th class="p-3.5">الإداري</th>
+                            <th class="p-3.5">السبب</th>
+                            <th class="p-3.5">الوقت</th>
+                            <th class="p-3.5">إجراء</th>
+                        </tr>
                     </thead>
                     <tbody id="packagesTableBody" class="divide-y divide-zinc-800/70 text-sm">
                         <% if(safePackages.length === 0) { %>
-                            <tr><td colspan="5" class="p-6 text-center text-zinc-500">لا توجد حزم مسجلة حتى الآن</td></tr>
+                            <tr><td colspan="6" class="p-6 text-center text-zinc-500">لا توجد حزم مسجلة حتى الآن</td></tr>
                         <% } else { %>
                             <% safePackages.forEach(p => { %>
-                                <tr class="pkg-row hover:bg-zinc-900/50 transition" data-user="<%= p.username || '' %>" data-staff="<%= p.staffName || '' %>" data-pkg="<%= p.packageName || '' %>">
+                                <tr class="pkg-row hover:bg-zinc-900/50 transition" data-user="<%= p.username || '' %>" data-staff="<%= p.staffName || '' %>" data-pkg="<%= p.packageName || '' %>" data-reason="<%= p.reason || '' %>">
                                     <td class="p-3.5 font-bold text-white"><%= p.username %></td>
                                     <td class="p-3.5 text-[#d4af7a] font-bold"><%= p.packageName %></td>
                                     <td class="p-3.5">
@@ -284,6 +320,11 @@
                                     </td>
                                     <td class="p-3.5 text-zinc-400"><%= p.reason %></td>
                                     <td class="p-3.5 text-xs text-zinc-500"><%= p.date %></td>
+                                    <td class="p-3.5">
+                                        <button type="button" data-rec-key="<%= p._key %>" data-rec-label="<%= p.username %> - <%= p.packageName %>" onclick="deletePackageRecord(this.dataset.recKey, this.dataset.recLabel)" class="bg-red-500/10 hover:bg-red-500/25 text-red-400 border border-red-500/20 px-2.5 py-1 rounded-lg text-xs font-bold transition">
+                                            حذف
+                                        </button>
+                                    </td>
                                 </tr>
                             <% }) %>
                         <% } %>
@@ -316,14 +357,41 @@
                 </div>
             </div>
 
+            <!-- ملخص توزيع التفعيلات حسب القطاع -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                <div class="bg-[#0e0e11] border border-zinc-800/90 rounded-2xl p-3.5 flex items-center justify-between">
+                    <span class="text-xs sm:text-sm font-bold text-zinc-300">أمن الطرق</span>
+                    <span class="text-base font-black text-emerald-400"><%= actCounts.sec %></span>
+                </div>
+                <div class="bg-[#0e0e11] border border-zinc-800/90 rounded-2xl p-3.5 flex items-center justify-between">
+                    <span class="text-xs sm:text-sm font-bold text-zinc-300">الشرطة</span>
+                    <span class="text-base font-black text-emerald-400"><%= actCounts.pol %></span>
+                </div>
+                <div class="bg-[#0e0e11] border border-zinc-800/90 rounded-2xl p-3.5 flex items-center justify-between">
+                    <span class="text-xs sm:text-sm font-bold text-zinc-300">المرور</span>
+                    <span class="text-base font-black text-emerald-400"><%= actCounts.traf %></span>
+                </div>
+                <div class="bg-[#0e0e11] border border-zinc-800/90 rounded-2xl p-3.5 flex items-center justify-between">
+                    <span class="text-xs sm:text-sm font-bold text-zinc-300">دوريات الأمن</span>
+                    <span class="text-base font-black text-emerald-400"><%= actCounts.sf %></span>
+                </div>
+            </div>
+
             <div class="bg-[#0e0e11] rounded-2xl border border-zinc-800/90 overflow-hidden shadow-xl">
                 <table class="w-full text-right">
                     <thead class="bg-[#151519] text-zinc-300 text-sm border-b border-zinc-800">
-                        <tr><th class="p-3.5">العضو</th><th class="p-3.5">الاسم العسكري</th><th class="p-3.5">القطاع</th><th class="p-3.5">الإداري</th><th class="p-3.5">الوقت</th></tr>
+                        <tr>
+                            <th class="p-3.5">العضو</th>
+                            <th class="p-3.5">الاسم العسكري</th>
+                            <th class="p-3.5">القطاع</th>
+                            <th class="p-3.5">الإداري</th>
+                            <th class="p-3.5">الوقت</th>
+                            <th class="p-3.5">إجراء</th>
+                        </tr>
                     </thead>
                     <tbody id="activationsTableBody" class="divide-y divide-zinc-800/70 text-sm">
                         <% if(safeActivations.length === 0) { %>
-                            <tr><td colspan="5" class="p-6 text-center text-zinc-500">لا توجد عمليات تفعيل مسجلة حتى الآن</td></tr>
+                            <tr><td colspan="6" class="p-6 text-center text-zinc-500">لا توجد عمليات تفعيل مسجلة حتى الآن</td></tr>
                         <% } else { %>
                             <% safeActivations.forEach(a => { %>
                                 <tr class="act-row hover:bg-zinc-900/50 transition" data-user="<%= a.username || '' %>" data-nick="<%= a.nickname || '' %>" data-staff="<%= a.staffName || '' %>" data-sector="<%= a.sector || '' %>">
@@ -336,6 +404,11 @@
                                         </button>
                                     </td>
                                     <td class="p-3.5 text-xs text-zinc-500"><%= a.date %></td>
+                                    <td class="p-3.5">
+                                        <button type="button" data-rec-key="<%= a._key %>" data-rec-label="<%= a.username %> (<%= a.sector %>)" onclick="deleteActivationRecord(this.dataset.recKey, this.dataset.recLabel)" class="bg-red-500/10 hover:bg-red-500/25 text-red-400 border border-red-500/20 px-2.5 py-1 rounded-lg text-xs font-bold transition">
+                                            حذف
+                                        </button>
+                                    </td>
                                 </tr>
                             <% }) %>
                         <% } %>
@@ -349,13 +422,15 @@
         <div id="tab-blacklist" class="tab-content hidden">
             <div class="bg-[#0e0e11] p-4 rounded-2xl border border-zinc-800/90 mb-6 flex flex-wrap items-center justify-between gap-4 shadow-lg">
                 <div class="flex flex-wrap items-center gap-2.5 flex-1">
-                    <input type="text" id="blacklistIdInput" placeholder="ضع Copy ID هنا..." class="bg-[#16161a] border border-zinc-800 focus:border-[#b48e5c] p-2.5 rounded-xl w-64 text-sm text-white outline-none transition">
-                    <input type="text" id="blacklistReasonInput" placeholder="السبب (اختياري)..." class="bg-[#16161a] border border-zinc-800 focus:border-[#b48e5c] p-2.5 rounded-xl w-72 text-sm text-white outline-none transition">
+                    <input type="text" id="blacklistIdInput" placeholder="ضع Copy ID هنا..." class="bg-[#16161a] border border-zinc-800 focus:border-[#b48e5c] p-2.5 rounded-xl w-60 text-sm text-white outline-none transition">
+                    <input type="text" id="blacklistReasonInput" placeholder="السبب (اختياري)..." class="bg-[#16161a] border border-zinc-800 focus:border-[#b48e5c] p-2.5 rounded-xl w-64 text-sm text-white outline-none transition">
                     <button onclick="addToBlacklist()" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2.5 rounded-xl font-extrabold text-sm transition shadow">
                         🚫 إضافة للبلاك ليست
                     </button>
                 </div>
-                <p class="text-xs text-zinc-400">أي شخص مضاف هنا يتم رفض تفعيله تلقائياً في بوت التفعيل.</p>
+                <div class="flex flex-wrap items-center gap-3">
+                    <input type="text" id="blacklistSearchInput" oninput="filterBlacklist()" placeholder="🔍 بحث بالاسم أو الآيدي أو السبب..." class="bg-[#16161a] border border-zinc-800 focus:border-[#b48e5c] p-2.5 rounded-xl w-64 text-sm text-white outline-none transition">
+                </div>
             </div>
 
             <div class="bg-[#0e0e11] rounded-2xl border border-zinc-800/90 overflow-hidden shadow-xl">
@@ -369,12 +444,12 @@
                             <th class="p-3.5">إجراء</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-zinc-800/70 text-sm">
+                    <tbody id="blacklistTableBody" class="divide-y divide-zinc-800/70 text-sm">
                         <% if(safeBlacklist.length === 0) { %>
                             <tr><td colspan="5" class="p-6 text-center text-zinc-500">لا يوجد أشخاص في البلاك ليست حالياً</td></tr>
                         <% } else { %>
                             <% safeBlacklist.forEach(b => { %>
-                                <tr class="hover:bg-zinc-900/50 transition">
+                                <tr class="bl-row hover:bg-zinc-900/50 transition" data-user="<%= b.username || '' %>" data-id="<%= b.discordId || '' %>" data-reason="<%= b.reason || '' %>">
                                     <td class="p-3.5 font-bold text-white"><%= b.username %></td>
                                     <td class="p-3.5 font-mono text-[#d4af7a]"><%= b.discordId %></td>
                                     <td class="p-3.5 text-zinc-300"><%= b.reason || 'بدون سبب' %></td>
@@ -389,6 +464,7 @@
                         <% } %>
                     </tbody>
                 </table>
+                <p id="noBlacklistMsg" class="hidden p-6 text-center text-zinc-500">لا توجد نتائج مطابقة للبحث.</p>
             </div>
         </div>
 
@@ -412,11 +488,29 @@
                     </form>
                 </div>
             <% } else { %>
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
-                        <span class="text-[#b48e5c]">📜</span> سجل الحركات والعمليات الإدارية
-                    </h2>
-                    <span class="text-xs font-bold text-[#d4af7a] bg-[#b48e5c]/15 px-3 py-1.5 rounded-xl border border-[#b48e5c]/30">مفتوح بأمان 🔓</span>
+                <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+                            <span class="text-[#b48e5c]">📜</span> سجل الحركات والعمليات الإدارية
+                        </h2>
+                        <span class="text-xs font-bold text-[#d4af7a] bg-[#b48e5c]/15 px-3 py-1.5 rounded-xl border border-[#b48e5c]/30">مفتوح بأمان 🔓</span>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-3">
+                        <input type="text" id="auditSearchInput" oninput="filterAuditLogs()" placeholder="🔍 بحث في تفاصيل العمليات أو الأسماء..." class="bg-[#0e0e11] border border-zinc-800 focus:border-[#b48e5c] p-2.5 rounded-xl w-72 text-sm text-white outline-none transition">
+                        <select id="auditActionSelect" onchange="filterAuditLogs()" class="bg-[#0e0e11] border border-zinc-800 focus:border-[#b48e5c] p-2.5 rounded-xl text-sm text-white outline-none transition">
+                            <option value="all">جميع الحركات</option>
+                            <option value="إضافة إداري">إضافة إداري</option>
+                            <option value="تحديث تفاصيل">تحديث تفاصيل</option>
+                            <option value="تعديل ساعات يدوي">تعديل ساعات يدوي</option>
+                            <option value="تصفير">تصفير ساعات</option>
+                            <option value="حذف إداري">حذف إداري</option>
+                            <option value="بلاك ليست">البلاك ليست</option>
+                            <option value="تفعيل لاعب">تفعيل لاعب</option>
+                            <option value="منح حزمة">منح حزمة</option>
+                            <option value="حذف سجل">حذف سجل</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="bg-[#0e0e11] rounded-2xl border border-zinc-800/90 overflow-hidden shadow-xl">
@@ -424,12 +518,12 @@
                         <thead class="bg-[#151519] text-zinc-300 text-sm border-b border-zinc-800">
                             <tr><th class="p-3.5">نوع الحركة</th><th class="p-3.5">التفاصيل</th><th class="p-3.5">الوقت</th></tr>
                         </thead>
-                        <tbody class="divide-y divide-zinc-800/70 text-sm">
+                        <tbody id="auditTableBody" class="divide-y divide-zinc-800/70 text-sm">
                             <% if(safeAuditLogs.length === 0) { %>
                                 <tr><td colspan="3" class="p-6 text-center text-zinc-500">لا توجد عمليات مسجلة حتى الآن</td></tr>
                             <% } else { %>
                                 <% safeAuditLogs.forEach(log => { %>
-                                    <tr class="hover:bg-zinc-900/50 transition">
+                                    <tr class="audit-row hover:bg-zinc-900/50 transition" data-action="<%= log.action || '' %>" data-details="<%= log.details || '' %>" data-date="<%= log.date || '' %>">
                                         <td class="p-3.5 font-bold text-[#d4af7a]"><%= log.action %></td>
                                         <td class="p-3.5 text-zinc-300"><%= log.details %></td>
                                         <td class="p-3.5 text-xs text-zinc-500"><%= log.date %></td>
@@ -438,6 +532,7 @@
                             <% } %>
                         </tbody>
                     </table>
+                    <p id="noAuditMsg" class="hidden p-6 text-center text-zinc-500">لا توجد عمليات مطابقة للبحث أو الفلترة.</p>
                 </div>
             <% } %>
         </div>
@@ -556,6 +651,70 @@
             }
         }
 
+        async function deletePackageRecord(recKey, label) {
+            if (!confirm(`هل أنت متأكد من حذف سجل الحزمة (${label})؟`)) return;
+            const res = await fetch('/api/packages/remove/' + encodeURIComponent(recKey), { method: 'DELETE' });
+            const data = await res.json();
+            if (data.success) location.reload();
+            else alert(data.message || 'تعذر حذف السجل');
+        }
+
+        async function deleteActivationRecord(recKey, label) {
+            if (!confirm(`هل أنت متأكد من حذف سجل التفعيل (${label})؟`)) return;
+            const res = await fetch('/api/activations/remove/' + encodeURIComponent(recKey), { method: 'DELETE' });
+            const data = await res.json();
+            if (data.success) location.reload();
+            else alert(data.message || 'تعذر حذف السجل');
+        }
+
+        function filterBlacklist() {
+            const query = (document.getElementById('blacklistSearchInput')?.value || '').toLowerCase().trim();
+            const rows = document.querySelectorAll('.bl-row');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const user = (row.dataset.user || '').toLowerCase();
+                const id = (row.dataset.id || '').toLowerCase();
+                const reason = (row.dataset.reason || '').toLowerCase();
+
+                if (user.includes(query) || id.includes(query) || reason.includes(query)) {
+                    row.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    row.classList.add('hidden');
+                }
+            });
+
+            const noMsg = document.getElementById('noBlacklistMsg');
+            if (noMsg) noMsg.classList.toggle('hidden', visibleCount > 0 || rows.length === 0);
+        }
+
+        function filterAuditLogs() {
+            const query = (document.getElementById('auditSearchInput')?.value || '').toLowerCase().trim();
+            const actionFilter = document.getElementById('auditActionSelect')?.value || 'all';
+            const rows = document.querySelectorAll('.audit-row');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const action = row.dataset.action || '';
+                const details = (row.dataset.details || '').toLowerCase();
+                const date = (row.dataset.date || '').toLowerCase();
+
+                const matchesAction = actionFilter === 'all' || action.includes(actionFilter);
+                const matchesQuery = !query || action.toLowerCase().includes(query) || details.includes(query) || date.includes(query);
+
+                if (matchesAction && matchesQuery) {
+                    row.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    row.classList.add('hidden');
+                }
+            });
+
+            const noMsg = document.getElementById('noAuditMsg');
+            if (noMsg) noMsg.classList.toggle('hidden', visibleCount > 0 || rows.length === 0);
+        }
+
         async function addToBlacklist() {
             const discordId = document.getElementById('blacklistIdInput').value.trim();
             const reason = document.getElementById('blacklistReasonInput').value.trim();
@@ -652,9 +811,10 @@
             rows.forEach(row => {
                 const user = (row.dataset.user || '').toLowerCase();
                 const staff = (row.dataset.staff || '').toLowerCase();
+                const reason = (row.dataset.reason || '').toLowerCase();
                 const pkg = row.dataset.pkg || '';
 
-                if ((user.includes(query) || staff.includes(query)) && (pkgType === 'all' || pkg === pkgType)) {
+                if ((user.includes(query) || staff.includes(query) || reason.includes(query)) && (pkgType === 'all' || pkg === pkgType)) {
                     row.classList.remove('hidden');
                     visibleCount++;
                 } else {
