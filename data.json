@@ -4,11 +4,11 @@
       "discordId": "1437383547219476552",
       "username": "Al-Basmi",
       "avatar": "https://cdn.discordapp.com/avatars/1437383547219476552/d2031bbcce30b077e56d04f5889ec182.png",
-      "totalMinutes": 20,
+      "totalMinutes": 40,
       "sessions": [
         {
           "date": "2026-11-25",
-          "minutes": 20
+          "minutes": 40
         }
       ],
       "sessionLogs": [],
@@ -88,6 +88,18 @@
       "action": "تحديث تفاصيل",
       "details": "تم تحديث تفاصيل الإداري Al-Basmi (اسم FiveM: بدون)",
       "date": "٢٥‏/١١‏/٢٠٢٦، ٥:٤٠:٤٨ م"
+    },
+    {
+      "id": "1795628450222_18368",
+      "action": "تعديل ساعات يدوي",
+      "details": "تم تعديل دقائق الإداري Al-Basmi بمقدار (+20 دقيقة)",
+      "date": "٢٥‏/١١‏/٢٠٢٦، ٥:٤٠:٥٠ م"
+    },
+    {
+      "id": "1795628450223_31812",
+      "action": "تحديث تفاصيل",
+      "details": "تم تحديث تفاصيل الإداري Al-Basmi (اسم FiveM: بدون)",
+      "date": "٢٥‏/١١‏/٢٠٢٦، ٥:٤٠:٥٠ م"
     }
   ],
   "blacklist": [
